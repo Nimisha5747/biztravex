@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizTravex — Expense Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f0f2f7;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --purple: #7c3aed;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, .08);
+            --radius: 14px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 28px 28px 60px;
+        }
+
+        /* ── TOP BAR ── */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .page-subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* ── TAB SWITCHER ── */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 5px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            width: fit-content;
+            margin-bottom: 28px;
+        }
+
+        .tab-btn {
+            padding: 9px 24px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            background: transparent;
+            color: var(--muted);
+            letter-spacing: .2px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, .35);
+        }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        .form-section-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--primary);
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--muted);
+        }
+
+        .form-label span.req {
+            color: var(--danger);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text);
+            background: #f8fafc;
+            transition: all .15s;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .amount-group {
+            display: grid;
+            grid-template-columns: 1fr 120px 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .amount-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 42px;
+            font-size: 18px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 22px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 11px;
+        }
+
+        /* ── EXPENSE TABLE ── */
+        .table-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-top: 28px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-title {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .expense-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .expense-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .expense-table td {
+            padding: 13px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .expense-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .expense-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* ── STATUS BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-approved {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-pending {
+            background: #fef9c3;
+            color: #92400e;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .badge-draft {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        /* ── SUMMARY CHARTS ── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-val {
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .kpi-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            margin-bottom: 22px;
+        }
+
+        .charts-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 22px;
+            margin-bottom: 22px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .chart-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .chart-wrap {
+            position: relative;
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            padding: 14px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            background: #1a202c;
+            color: #fff;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .2);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .3s cubic-bezier(.175, .885, .32, 1.275);
+            z-index: 9999;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts-grid,
+            .charts-grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .amount-group {
+                grid-template-columns: 1fr;
+            }
+
+            .amount-divider {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<!-- ══════════════ NAVBAR ══════════════ -->
+<nav class="bg-slate-900 text-white shadow-md mb-6">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="font-black tracking-wider text-sm uppercase text-slate-100">BizTravex</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1 sm:gap-3 text-xs font-bold tracking-wide uppercase">
+            <a href="http://localhost:3000"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Home Hub</a>
+            <a href="http://localhost:4000/mis.html"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">MIS</a>
+            <a href="http://localhost:4001/expense.html"
+                class="px-3 py-2 rounded-md bg-red-600 text-white shadow">Expenses</a>
+            <a href="http://localhost:5000/attendance.html"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Attendance</a>
+            <a href="http://localhost:6000/billing.html"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Billing</a>
+            <a href="http://localhost:7000/reporting.html"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Reports</a>
+            <a href="http://localhost:8000/settings.html"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Settings</a>
+        </div>
+    </div>
+</nav>
+
+<body>
+
+    <div class="page">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div>
+                <div class="page-title">💰 Expense Management</div>
+                <div class="page-subtitle" id="today-label">Loading…</div>
+            </div>
+        </div>
+
+        <!-- TAB BAR -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-add" onclick="switchTab('add')">➕ Add Expense</button>
+            <button class="tab-btn" id="tab-summary" onclick="switchTab('summary')">📊 Summary & Analytics</button>
+        </div>
+
+        <!-- ══════════════ ADD TAB ══════════════ -->
+        <div id="panel-add">
+            <div class="form-card">
+                <div class="form-section-title">📝 New Expense Entry</div>
+                <div class="form-grid" style="margin-bottom:22px;">
+
+                    <div class="form-field">
+                        <label class="form-label">Date <span class="req">*</span></label>
+                        <input type="date" class="form-input" id="f-date">
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Position / Head <span class="req">*</span></label>
+                        <select class="form-select" id="f-position">
+                            <option value="">Select Position</option>
+                            <option>Director</option>
+                            <option>Operations Manager</option>
+                            <option>Sales Executive</option>
+                            <option>Account Manager</option>
+                            <option>Chauffeur</option>
+                            <option>Admin Staff</option>
+                            <option>Finance Head</option>
+                            <option>HR Manager</option>
+                            <option>IT Support</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Employee Name <span class="req">*</span></label>
+                        <input type="text" class="form-input" id="f-name" placeholder="Full name">
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Category <span class="req">*</span></label>
+                        <select class="form-select" id="f-category" onchange="updateSubcategory()">
+                            <option value="">Select Category</option>
+                            <option>Travel & Transport</option>
+                            <option>Accommodation</option>
+                            <option>Meals & Entertainment</option>
+                            <option>Office Supplies</option>
+                            <option>Communication</option>
+                            <option>Marketing & Advertising</option>
+                            <option>Training & Development</option>
+                            <option>Medical & Health</option>
+                            <option>Utilities</option>
+                            <option>Miscellaneous</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Sub-Category <span class="req">*</span></label>
+                        <select class="form-select" id="f-subcategory">
+                            <option value="">Select Sub-Category</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="f-status">
+                            <option value="Draft">Draft</option>
+                            <option value="Pending">Pending Approval</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Amount Section -->
+                <div class="form-section-title" style="margin-top:8px;">💱 Amount Details</div>
+                <div class="amount-group" style="margin-bottom:22px;">
+                    <div class="form-field">
+                        <label class="form-label">Amount (Original) <span class="req">*</span></label>
+                        <div style="display:flex;gap:8px;">
+                            <select class="form-select" id="f-currency" style="width:90px;flex-shrink:0;"
+                                onchange="calcINR()">
+                                <option>AED</option>
+                                <option>USD</option>
+                                <option>EUR</option>
+                                <option>GBP</option>
+                                <option>INR</option>
+                                <option>SAR</option>
+                                <option>JPY</option>
+                                <option>CNY</option>
+                            </select>
+                            <input type="number" class="form-input" id="f-amount-orig" placeholder="0.00" step="0.01"
+                                min="0" oninput="calcINR()" style="flex:1;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <label class="form-label">Exchange Rate (to INR)</label>
+                        <input type="number" class="form-input" id="f-rate" placeholder="e.g. 22.85" step="0.0001"
+                            oninput="calcINR()">
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Amount (INR) <span class="req">*</span></label>
+                        <input type="number" class="form-input" id="f-amount-inr" placeholder="Auto-calculated"
+                            step="0.01" min="0" style="background:#f0f9ff;">
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="form-section-title" style="margin-top:8px;">📋 Remarks</div>
+                <div class="form-field" style="margin-bottom:28px;">
+                    <label class="form-label">Remarks / Description</label>
+                    <textarea class="form-textarea" id="f-remarks"
+                        placeholder="Add any additional notes, reference numbers, or context for this expense…"></textarea>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button class="btn btn-ghost" onclick="resetForm()">↺ Reset</button>
+                    <button class="btn btn-primary" onclick="saveExpense()">💾 Save Expense</button>
+                </div>
+            </div>
+
+            <!-- Recent Expenses Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <div>
+                        <div class="table-title">📋 Recent Expense Entries</div>
+                        <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="table-count"></div>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <select class="form-select" id="filter-status-tbl" style="width:160px;"
+                            onchange="renderTable()">
+                            <option value="">All Statuses</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="expense-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Category</th>
+                                <th>Sub-Category</th>
+                                <th>Orig. Amount</th>
+                                <th>Rate</th>
+                                <th>INR Amount</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ SUMMARY TAB ══════════════ -->
+        <div id="panel-summary" style="display:none;">
+
+            <!-- KPI Cards -->
+            <div class="summary-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background:#eff6ff;">💰</div>
+                    <div class="kpi-val" id="kpi-total" style="color:var(--primary)">₹0</div>
+                    <div class="kpi-label">Total Expenses (INR)</div>
+                    <div class="kpi-sub" id="kpi-total-sub">All records</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background:#dcfce7;">✅</div>
+                    <div class="kpi-val" id="kpi-approved" style="color:var(--success)">0</div>
+                    <div class="kpi-label">Approved Expenses</div>
+                    <div class="kpi-sub" id="kpi-approved-sub">₹0 total</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background:#fef9c3;">⏳</div>
+                    <div class="kpi-val" id="kpi-pending" style="color:var(--warning)">0</div>
+                    <div class="kpi-label">Pending Approval</div>
+                    <div class="kpi-sub" id="kpi-pending-sub">₹0 total</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background:#fee2e2;">❌</div>
+                    <div class="kpi-val" id="kpi-rejected" style="color:var(--danger)">0</div>
+                    <div class="kpi-label">Rejected</div>
+                    <div class="kpi-sub" id="kpi-rejected-sub">₹0 total</div>
+                </div>
+            </div>
+
+            <!-- Row 1: Category pie + Monthly bar -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Expenses by Category</div>
+                    <div class="chart-sub">INR breakdown across all categories</div>
+                    <div class="chart-wrap" style="height:280px;">
+                        <canvas id="chart-category"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Monthly Expense Trend</div>
+                    <div class="chart-sub">Total INR spent per month (current year)</div>
+                    <div class="chart-wrap" style="height:280px;">
+                        <canvas id="chart-monthly"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Status donut + Currency bar + Top persons -->
+            <div class="charts-grid-3">
+                <div class="chart-card">
+                    <div class="chart-title">Approval Status</div>
+                    <div class="chart-sub">Breakdown by approval status</div>
+                    <div class="chart-wrap" style="height:240px;">
+                        <canvas id="chart-status"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Expenses by Currency</div>
+                    <div class="chart-sub">Original currency distribution</div>
+                    <div class="chart-wrap" style="height:240px;">
+                        <canvas id="chart-currency"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Top Spenders</div>
+                    <div class="chart-sub">Highest expense by employee (INR)</div>
+                    <div class="chart-wrap" style="height:240px;">
+                        <canvas id="chart-persons"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Position head breakdown -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Expenses by Position / Head</div>
+                    <div class="chart-sub">INR total per department position</div>
+                    <div class="chart-wrap" style="height:260px;">
+                        <canvas id="chart-position"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Sub-Category Breakdown</div>
+                    <div class="chart-sub">Top sub-categories by total INR amount</div>
+                    <div class="chart-wrap" style="height:260px;">
+                        <canvas id="chart-subcategory"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ─────────────────────────────────────
+        // MOCK DATA
+        // ─────────────────────────────────────
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('today-label').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('f-date').value = today;
+
+        let expenses = [
+            { id: 1, date: '2026-07-01', position: 'Operations Manager', name: 'Ravi Sharma', category: 'Travel & Transport', subcategory: 'Flight Tickets', currency: 'AED', amountOrig: 850, rate: 22.85, amountINR: 19422.50, remarks: 'Dubai–Mumbai return', status: 'Approved' },
+            { id: 2, date: '2026-07-01', position: 'Sales Executive', name: 'Priya Nair', category: 'Meals & Entertainment', subcategory: 'Client Dinner', currency: 'AED', amountOrig: 320, rate: 22.85, amountINR: 7312, remarks: 'Client meeting at Nobu', status: 'Approved' },
+            { id: 3, date: '2026-07-02', position: 'Director', name: 'Ankit Mehta', category: 'Accommodation', subcategory: 'Hotel Stay', currency: 'USD', amountOrig: 420, rate: 83.50, amountINR: 35070, remarks: 'NYC conference hotel', status: 'Pending' },
+            { id: 4, date: '2026-07-02', position: 'Finance Head', name: 'Sneha Reddy', category: 'Office Supplies', subcategory: 'Stationery', currency: 'INR', amountOrig: 4500, rate: 1, amountINR: 4500, remarks: 'Q3 stationery restock', status: 'Approved' },
+            { id: 5, date: '2026-07-03', position: 'Account Manager', name: 'Kunal Gupta', category: 'Communication', subcategory: 'Mobile Recharge', currency: 'INR', amountOrig: 999, rate: 1, amountINR: 999, remarks: 'Corporate SIM recharge', status: 'Draft' },
+            { id: 6, date: '2026-07-03', position: 'HR Manager', name: 'Divya Pillai', category: 'Training & Development', subcategory: 'Online Course', currency: 'USD', amountOrig: 199, rate: 83.50, amountINR: 16616.50, remarks: 'Coursera HR leadership', status: 'Approved' },
+            { id: 7, date: '2026-07-04', position: 'IT Support', name: 'Mohan Das', category: 'Office Supplies', subcategory: 'Software License', currency: 'USD', amountOrig: 350, rate: 83.50, amountINR: 29225, remarks: 'Adobe CC annual', status: 'Pending' },
+            { id: 8, date: '2026-07-04', position: 'Operations Manager', name: 'Ravi Sharma', category: 'Travel & Transport', subcategory: 'Taxi / Cab', currency: 'AED', amountOrig: 120, rate: 22.85, amountINR: 2742, remarks: 'Airport to office', status: 'Approved' },
+            { id: 9, date: '2026-07-05', position: 'Sales Executive', name: 'Priya Nair', category: 'Marketing & Advertising', subcategory: 'Digital Ads', currency: 'AED', amountOrig: 1200, rate: 22.85, amountINR: 27420, remarks: 'LinkedIn campaign July', status: 'Pending' },
+            { id: 10, date: '2026-06-28', position: 'Director', name: 'Ankit Mehta', category: 'Travel & Transport', subcategory: 'Business Class Upgrade', currency: 'EUR', amountOrig: 600, rate: 90.20, amountINR: 54120, remarks: 'LHR–DXB upgrade', status: 'Rejected' },
+        ];
+
+        const SUBCATEGORIES = {
+            'Travel & Transport': ['Flight Tickets', 'Business Class Upgrade', 'Taxi / Cab', 'Car Rental', 'Train / Metro', 'Fuel / Petrol', 'Parking', 'Visa Fees'],
+            'Accommodation': ['Hotel Stay', 'Serviced Apartment', 'Airbnb', 'Guest House'],
+            'Meals & Entertainment': ['Client Dinner', 'Team Lunch', 'Coffee / Tea', 'In-flight Meals', 'Event Tickets'],
+            'Office Supplies': ['Stationery', 'Software License', 'Hardware / Equipment', 'Printing', 'Furniture'],
+            'Communication': ['Mobile Recharge', 'Internet Bill', 'Courier / Postage', 'Telephone Bill'],
+            'Marketing & Advertising': ['Digital Ads', 'Print Media', 'Events & Exhibitions', 'PR & Branding', 'Promotions'],
+            'Training & Development': ['Online Course', 'Conference Registration', 'Workshop', 'Books & Materials'],
+            'Medical & Health': ['Medical Reimbursement', 'Insurance Premium', 'Gym / Wellness'],
+            'Utilities': ['Electricity', 'Water', 'Office Rent', 'Maintenance'],
+            'Miscellaneous': ['Bank Charges', 'Legal Fees', 'Donation', 'Other'],
+        };
+
+        const DEFAULT_RATES = { AED: 22.85, USD: 83.50, EUR: 90.20, GBP: 105.60, INR: 1, SAR: 22.25, JPY: 0.55, CNY: 11.50 };
+
+        // ─────────────────────────────────────
+        // HELPERS
+        // ─────────────────────────────────────
+        function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function fmtOrig(n, cur) { return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur; }
+
+        function statusBadge(s) {
+            const map = { Approved: 'badge-approved', Pending: 'badge-pending', Rejected: 'badge-rejected', Draft: 'badge-draft' };
+            return `<span class="badge ${map[s] || 'badge-draft'}">${s}</span>`;
+        }
+
+        // ─────────────────────────────────────
+        // SUBCATEGORY UPDATE
+        // ─────────────────────────────────────
+        function updateSubcategory() {
+            const cat = document.getElementById('f-category').value;
+            const sub = document.getElementById('f-subcategory');
+            const opts = SUBCATEGORIES[cat] || [];
+            sub.innerHTML = '<option value="">Select Sub-Category</option>' + opts.map(o => `<option>${o}</option>`).join('');
+        }
+
+        // ─────────────────────────────────────
+        // EXCHANGE RATE CALC
+        // ─────────────────────────────────────
+        function calcINR() {
+            const cur = document.getElementById('f-currency').value;
+            const orig = parseFloat(document.getElementById('f-amount-orig').value) || 0;
+            let rate = parseFloat(document.getElementById('f-rate').value);
+            if (!rate) {
+                rate = DEFAULT_RATES[cur] || 1;
+                document.getElementById('f-rate').value = rate;
+            }
+            document.getElementById('f-amount-inr').value = (orig * rate).toFixed(2);
+        }
+
+        // ─────────────────────────────────────
+        // SAVE EXPENSE
+        // ─────────────────────────────────────
+        function saveExpense() {
+            const date = document.getElementById('f-date').value;
+            const position = document.getElementById('f-position').value;
+            const name = document.getElementById('f-name').value.trim();
+            const category = document.getElementById('f-category').value;
+            const subcat = document.getElementById('f-subcategory').value;
+            const currency = document.getElementById('f-currency').value;
+            const amtOrig = parseFloat(document.getElementById('f-amount-orig').value);
+            const rate = parseFloat(document.getElementById('f-rate').value) || 1;
+            const amtINR = parseFloat(document.getElementById('f-amount-inr').value);
+            const remarks = document.getElementById('f-remarks').value.trim();
+            const status = document.getElementById('f-status').value;
+
+            if (!date || !position || !name || !category || !subcat || !amtOrig || !amtINR) {
+                showToast('Please fill in all required fields.', 'error'); return;
+            }
+
+            const newEntry = {
+                id: Date.now(), date, position, name, category,
+                subcategory: subcat, currency, amountOrig: amtOrig,
+                rate, amountINR: amtINR, remarks, status
+            };
+            expenses.unshift(newEntry);
+            resetForm();
+            renderTable();
+            showToast('✅ Expense saved successfully!', 'success');
+        }
+
+        function resetForm() {
+            document.getElementById('f-date').value = today;
+            ['f-position', 'f-name', 'f-category', 'f-subcategory', 'f-amount-orig', 'f-rate', 'f-amount-inr', 'f-remarks'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            document.getElementById('f-status').value = 'Draft';
+            document.getElementById('f-currency').value = 'AED';
+            document.getElementById('f-subcategory').innerHTML = '<option value="">Select Sub-Category</option>';
+        }
+
+        // ─────────────────────────────────────
+        // RENDER TABLE
+        // ─────────────────────────────────────
+        function renderTable() {
+            const filter = document.getElementById('filter-status-tbl').value;
+            const data = filter ? expenses.filter(e => e.status === filter) : expenses;
+            document.getElementById('table-count').textContent = `${data.length} record${data.length !== 1 ? 's' : ''}`;
+            const tbody = document.getElementById('expense-tbody');
+            if (!data.length) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted);font-style:italic;">No expense records found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = data.map((e, i) => `
+        <tr>
+            <td style="font-weight:700;color:var(--muted);font-size:11px;">${i + 1}</td>
+            <td style="white-space:nowrap;font-size:12px;">${e.date}</td>
+            <td style="font-weight:700;">${e.name}</td>
+            <td style="font-size:12px;color:var(--muted);">${e.position}</td>
+            <td style="font-size:12px;">${e.category}</td>
+            <td style="font-size:12px;color:var(--muted);">${e.subcategory}</td>
+            <td style="font-weight:700;font-family:monospace;">${fmtOrig(e.amountOrig, e.currency)}</td>
+            <td style="font-size:11px;color:var(--muted);">${e.rate}</td>
+            <td style="font-weight:700;font-family:monospace;color:var(--primary);">${fmt(e.amountINR)}</td>
+            <td>${statusBadge(e.status)}</td>
+            <td style="font-size:11px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e.remarks}">${e.remarks || '—'}</td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-ghost btn-sm" onclick="deleteExpense(${e.id})">🗑</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+        }
+
+        function deleteExpense(id) {
+            expenses = expenses.filter(e => e.id !== id);
+            renderTable();
+            showToast('Expense removed.', '');
+        }
+
+        // ─────────────────────────────────────
+        // EXPORT CSV
+        // ─────────────────────────────────────
+        function exportCSV() {
+            const headers = ['Date', 'Name', 'Position', 'Category', 'Sub-Category', 'Currency', 'Orig Amount', 'Rate', 'INR Amount', 'Status', 'Remarks'];
+            const rows = expenses.map(e => [
+                e.date, e.name, e.position, e.category, e.subcategory,
+                e.currency, e.amountOrig, e.rate, e.amountINR, e.status, e.remarks
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `Expenses_${today}.csv`; a.click();
+            URL.revokeObjectURL(url);
+            showToast('📥 CSV exported!', 'success');
+        }
+
+        // ─────────────────────────────────────
+        // TAB SWITCH
+        // ─────────────────────────────────────
+        function switchTab(tab) {
+            document.getElementById('panel-add').style.display = tab === 'add' ? 'block' : 'none';
+            document.getElementById('panel-summary').style.display = tab === 'summary' ? 'block' : 'none';
+            document.getElementById('tab-add').classList.toggle('active', tab === 'add');
+            document.getElementById('tab-summary').classList.toggle('active', tab === 'summary');
+            if (tab === 'summary') { updateKPIs(); renderCharts(); }
+        }
+
+        // ─────────────────────────────────────
+        // KPI UPDATER
+        // ─────────────────────────────────────
+        function updateKPIs() {
+            const total = expenses.reduce((s, e) => s + e.amountINR, 0);
+            const approved = expenses.filter(e => e.status === 'Approved');
+            const pending = expenses.filter(e => e.status === 'Pending');
+            const rejected = expenses.filter(e => e.status === 'Rejected');
+
+            document.getElementById('kpi-total').textContent = fmt(total);
+            document.getElementById('kpi-total-sub').textContent = `${expenses.length} total records`;
+            document.getElementById('kpi-approved').textContent = approved.length;
+            document.getElementById('kpi-approved-sub').textContent = fmt(approved.reduce((s, e) => s + e.amountINR, 0));
+            document.getElementById('kpi-pending').textContent = pending.length;
+            document.getElementById('kpi-pending-sub').textContent = fmt(pending.reduce((s, e) => s + e.amountINR, 0));
+            document.getElementById('kpi-rejected').textContent = rejected.length;
+            document.getElementById('kpi-rejected-sub').textContent = fmt(rejected.reduce((s, e) => s + e.amountINR, 0));
+        }
+
+        // ─────────────────────────────────────
+        // CHARTS
+        // ─────────────────────────────────────
+        const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#ea580c', '#6366f1'];
+        const chartInstances = {};
+
+        function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+        function renderCharts() {
+            // 1. Category pie
+            destroyChart('chart-category');
+            const catMap = {};
+            expenses.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amountINR; });
+            const catLabels = Object.keys(catMap);
+            chartInstances['chart-category'] = new Chart(document.getElementById('chart-category'), {
+                type: 'doughnut',
+                data: { labels: catLabels, datasets: [{ data: catLabels.map(k => catMap[k]), backgroundColor: CHART_COLORS, borderWidth: 2, borderColor: '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 14 } } } }
+            });
+
+            // 2. Monthly bar
+            destroyChart('chart-monthly');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthTotals = Array(12).fill(0);
+            expenses.forEach(e => { const m = new Date(e.date).getMonth(); monthTotals[m] += e.amountINR; });
+            chartInstances['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{ label: 'Total INR', data: monthTotals, backgroundColor: 'rgba(37,99,235,0.8)', borderRadius: 6, borderSkipped: false }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { callback: v => '₹' + (v / 1000).toFixed(0) + 'K', font: { size: 10 } }, grid: { color: '#f1f5f9' } }, x: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+
+            // 3. Status donut
+            destroyChart('chart-status');
+            const statuses = ['Approved', 'Pending', 'Draft', 'Rejected'];
+            const statusColors = ['#16a34a', '#d97706', '#94a3b8', '#dc2626'];
+            const statusCounts = statuses.map(s => expenses.filter(e => e.status === s).length);
+            chartInstances['chart-status'] = new Chart(document.getElementById('chart-status'), {
+                type: 'doughnut',
+                data: { labels: statuses, datasets: [{ data: statusCounts, backgroundColor: statusColors, borderWidth: 2, borderColor: '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10, family: 'Inter' }, boxWidth: 12 } } } }
+            });
+
+            // 4. Currency bar
+            destroyChart('chart-currency');
+            const curMap = {};
+            expenses.forEach(e => { curMap[e.currency] = (curMap[e.currency] || 0) + e.amountOrig; });
+            const curLabels = Object.keys(curMap);
+            chartInstances['chart-currency'] = new Chart(document.getElementById('chart-currency'), {
+                type: 'bar',
+                data: {
+                    labels: curLabels,
+                    datasets: [{ label: 'Orig. Amount', data: curLabels.map(k => curMap[k]), backgroundColor: CHART_COLORS.slice(0, curLabels.length), borderRadius: 6 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } }, x: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+
+            // 5. Top spenders horizontal bar
+            destroyChart('chart-persons');
+            const personMap = {};
+            expenses.forEach(e => { personMap[e.name] = (personMap[e.name] || 0) + e.amountINR; });
+            const personEntries = Object.entries(personMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            chartInstances['chart-persons'] = new Chart(document.getElementById('chart-persons'), {
+                type: 'bar',
+                data: {
+                    labels: personEntries.map(([k]) => k),
+                    datasets: [{ label: 'INR', data: personEntries.map(([, v]) => v), backgroundColor: 'rgba(124,58,237,0.8)', borderRadius: 6 }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { ticks: { callback: v => '₹' + (v / 1000).toFixed(0) + 'K', font: { size: 10 } }, grid: { color: '#f1f5f9' } }, y: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+
+            // 6. Position bar
+            destroyChart('chart-position');
+            const posMap = {};
+            expenses.forEach(e => { posMap[e.position] = (posMap[e.position] || 0) + e.amountINR; });
+            const posEntries = Object.entries(posMap).sort((a, b) => b[1] - a[1]);
+            chartInstances['chart-position'] = new Chart(document.getElementById('chart-position'), {
+                type: 'bar',
+                data: {
+                    labels: posEntries.map(([k]) => k),
+                    datasets: [{ label: 'INR', data: posEntries.map(([, v]) => v), backgroundColor: CHART_COLORS, borderRadius: 6 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { ticks: { callback: v => '₹' + (v / 1000).toFixed(0) + 'K', font: { size: 10 } }, grid: { color: '#f1f5f9' } }, x: { ticks: { font: { size: 9 }, maxRotation: 30 }, grid: { display: false } } }
+                }
+            });
+
+            // 7. Sub-category bar
+            destroyChart('chart-subcategory');
+            const subMap = {};
+            expenses.forEach(e => { subMap[e.subcategory] = (subMap[e.subcategory] || 0) + e.amountINR; });
+            const subEntries = Object.entries(subMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            chartInstances['chart-subcategory'] = new Chart(document.getElementById('chart-subcategory'), {
+                type: 'bar',
+                data: {
+                    labels: subEntries.map(([k]) => k),
+                    datasets: [{ label: 'INR', data: subEntries.map(([, v]) => v), backgroundColor: 'rgba(8,145,178,0.8)', borderRadius: 6 }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { ticks: { callback: v => '₹' + (v / 1000).toFixed(0) + 'K', font: { size: 10 } }, grid: { color: '#f1f5f9' } }, y: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+        }
+
+        // ─────────────────────────────────────
+        // TOAST
+        // ─────────────────────────────────────
+        let toastTimer;
+        function showToast(msg, type) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = `toast ${type} show`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // ─────────────────────────────────────
+        // INIT
+        // ─────────────────────────────────────
+        renderTable();
+    </script>
+</body>
+
+</html>

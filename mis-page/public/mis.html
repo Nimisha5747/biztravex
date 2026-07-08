@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizTravex MIS — Operations Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f0f2f7;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --success: #16a34a;
+            --success-light: #f0fdf4;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --warning: #d97706;
+            --warning-light: #fffbeb;
+            --purple: #7c3aed;
+            --purple-light: #f5f3ff;
+            --nav-bg: #0f172a;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, .08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, .12);
+            --radius: 14px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── NAV ── */
+        nav {
+            background: var(--nav-bg);
+            color: #fff;
+            padding: 0 28px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .25);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: .4px;
+            color: #fff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all .15s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+        }
+
+        .nav-links a.active {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        /* ── PAGE ── */
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 28px 60px;
+        }
+
+        /* ── TOP BAR ── */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .page-subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, .4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn-purple {
+            background: var(--purple);
+            color: #fff;
+        }
+
+        .btn-purple:hover {
+            background: #6d28d9;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #fff;
+        }
+
+        .btn-warning:hover {
+            background: #b45309;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform .15s, box-shadow .15s;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue {
+            background: var(--primary-light);
+        }
+
+        .stat-icon.yellow {
+            background: var(--warning-light);
+        }
+
+        .stat-icon.red {
+            background: var(--danger-light);
+        }
+
+        .stat-icon.green {
+            background: var(--success-light);
+        }
+
+        .stat-val {
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 4px;
+        }
+
+        .stat-change {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .stat-change.up {
+            color: var(--success);
+        }
+
+        .stat-change.neutral {
+            color: var(--muted);
+        }
+
+        /* ── HORIZONTAL NAV ── */
+        .section-nav {
+            display: flex;
+            gap: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+
+        .section-tab {
+            padding: 9px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .section-tab:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .section-tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, .3);
+        }
+
+        .tab-badge {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 99px;
+        }
+
+        .section-tab.active .tab-badge {
+            background: rgba(255, 255, 255, .2);
+            color: #fff;
+        }
+
+        .section-tab:not(.active) .tab-badge {
+            background: var(--border);
+            color: var(--muted);
+        }
+
+        /* ── SECTION PANELS ── */
+        .section-panel {
+            display: none;
+        }
+
+        .section-panel.active {
+            display: block;
+            animation: fadeUp .2s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── ASSIGN CHAUFFEUR PANEL ── */
+        .filter-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+
+        .filter-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 160px;
+        }
+
+        .filter-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .filter-input,
+        .filter-select {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        /* ── ASSIGN TABLE ── */
+        .assign-table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .assign-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .assign-table thead {
+            background: #f8fafc;
+        }
+
+        .assign-table th {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .assign-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .assign-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .assign-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .assign-table tr.selected td {
+            background: #eff6ff;
+        }
+
+        .chauffeur-select {
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            background: #fff;
+            outline: none;
+            min-width: 170px;
+        }
+
+        .chauffeur-select:focus {
+            border-color: var(--primary);
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        /* ── STATUS BADGE ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+
+        .badge-pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .badge-progress {
+            background: var(--purple-light);
+            color: var(--purple);
+        }
+
+        .badge-completed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-cancelled {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* ── BOOKING CARDS GRID ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .booking-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            transition: transform .15s, box-shadow .15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .booking-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .booking-card.pending::before {
+            background: var(--warning);
+        }
+
+        .booking-card.progress::before {
+            background: var(--purple);
+        }
+
+        .booking-card.completed::before {
+            background: var(--success);
+        }
+
+        .booking-card.cancelled::before {
+            background: var(--danger);
+        }
+
+        .booking-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .card-id {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .card-time {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .card-client {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .card-passenger {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .card-route {
+            font-size: 11px;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .route-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .card-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 12px 0;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .meta-pill {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--muted);
+        }
+
+        .card-chauffeur {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            padding: 8px 10px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chauffeur-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            flex-shrink: 0;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .remarks-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .remarks-section.open {
+            display: block;
+            animation: fadeUp .15s ease;
+        }
+
+        .remark-entry {
+            font-size: 10px;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        .remark-form {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .remark-input {
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-family: inherit;
+            font-size: 11px;
+            resize: vertical;
+            outline: none;
+            min-height: 54px;
+        }
+
+        .remark-input:focus {
+            border-color: var(--primary);
+        }
+
+        .remark-author {
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 11px;
+            outline: none;
+        }
+
+        .remark-author:focus {
+            border-color: var(--primary);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        .empty-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .empty-sub {
+            font-size: 12px;
+        }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 28px;
+            width: 100%;
+            max-width: 560px;
+            margin: 16px;
+            box-shadow: var(--shadow-lg);
+            transform: scale(.96);
+            transition: transform .2s;
+        }
+
+        .modal-overlay.open .modal {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--muted);
+            line-height: 1;
+            padding: 4px;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .modal-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .modal-input {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 9px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        .modal-input:focus {
+            border-color: var(--primary);
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 300;
+            background: #1e293b;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(60px);
+            opacity: 0;
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .section-count {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        /* ── PROGRESS CARD specific ── */
+        .progress-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 99px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--purple);
+            border-radius: 99px;
+        }
+
+        /* ── OUTGOING PRESET ── */
+        .preset-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .preset-chip {
+            padding: 5px 12px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .preset-chip:hover,
+        .preset-chip.selected {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* ── PAYMENT PANEL ── */
+        .payment-panel {
+            display: none;
+            margin-top: 12px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            animation: fadeUp .18s ease;
+        }
+
+        .payment-panel.open {
+            display: block;
+        }
+
+        .payment-panel-title {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .payment-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .payment-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .payment-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .payment-select,
+        .payment-input {
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            background: #fff;
+            outline: none;
+            height: 32px;
+        }
+
+        .payment-select:focus,
+        .payment-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+        }
+
+        .payment-input {
+            width: 120px;
+        }
+
+        .payment-saved-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--success);
+            background: var(--success-light);
+            border-radius: 99px;
+            padding: 2px 8px;
+            margin-left: 8px;
+        }
+
+        @media (max-width: 1100px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page {
+                padding: 16px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<nav class="bg-slate-900 text-white shadow-md mb-6">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="font-black tracking-wider text-sm uppercase text-slate-100">BizTravex</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1 sm:gap-3 text-xs font-bold tracking-wide uppercase">
+            <a href="http://localhost:3000" id="nav-home"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Home Hub
+            </a>
+            <a href="http://localhost:4000/mis.html" id="nav-mis"
+                class="px-3 py-2 rounded-md bg-red-600 text-white shadow">
+                MIS
+            </a>
+            <a href="http://localhost:4001/expense.html" id="nav-expense"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Expenses
+            </a>
+            <a href="http://localhost:5000/attendance.html" id="nav-attendance"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Attendance
+            </a>
+            <a href="http://localhost:6000/billing.html" id="nav-billing"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Billing
+            </a>
+            <a href="http://localhost:7000/reporting.html" id="nav-reporting"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Reports
+            </a>
+            <a href="http://localhost:8000/settings.html" id="nav-settings"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Settings
+            </a>
+        </div>
+    </div>
+</nav>
+
+
+<!-- MAIN PAGE -->
+<div class="page">
+
+    <div class="top-bar">
+        <div>
+            <div class="page-title">Operations Control MIS</div>
+            <div class="page-subtitle" id="today-label">Loading date…</div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS (6 widgets) -->
+    <div class="stats-grid">
+        <!-- 1. Today's Total -->
+        <div class="stat-card">
+            <div class="stat-icon blue"></div>
+            <div>
+                <div class="stat-val" id="stat-today-total">—</div>
+                <div class="stat-label">Today's Bookings</div>
+                <div class="stat-change neutral">All of today</div>
+            </div>
+        </div>
+        <!-- 2. Today's Upcoming -->
+        <div class="stat-card">
+            <div class="stat-icon yellow"></div>
+            <div>
+                <div class="stat-val" id="stat-pending">—</div>
+                <div class="stat-label">Today's Upcoming</div>
+                <div class="stat-change neutral">Awaiting dispatch</div>
+            </div>
+        </div>
+        <!-- 3. Ride In Progress -->
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#ede9fe;"></div>
+            <div>
+                <div class="stat-val" id="stat-inprogress" style="color:#7c3aed;">—</div>
+                <div class="stat-label">Rides In Progress</div>
+                <div class="stat-change neutral">Currently active</div>
+            </div>
+        </div>
+        <!-- 4. Today's Completed -->
+        <div class="stat-card">
+            <div class="stat-icon green"></div>
+            <div>
+                <div class="stat-val" id="stat-completed">—</div>
+                <div class="stat-label">Today's Completed</div>
+                <div class="stat-change up">On track</div>
+            </div>
+        </div>
+        <!-- 5. Today's Cancelled -->
+        <div class="stat-card">
+            <div class="stat-icon red"></div>
+            <div>
+                <div class="stat-val" id="stat-cancelled">—</div>
+                <div class="stat-label">Today's Cancelled</div>
+                <div class="stat-change neutral">Today only</div>
+            </div>
+        </div>
+        <!-- 6. MTD Bookings -->
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#ecfdf5;"></div>
+            <div>
+                <div class="stat-val" id="stat-mtd" style="color:#059669;">—</div>
+                <div class="stat-label">Bookings MTD</div>
+                <div class="stat-change neutral">Month-to-date</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-nav">
+        <button class="section-tab" onclick="switchTab('assign')">Assign Chauffeur <span class="tab-badge"
+                id="badge-assign">—</span></button>
+        <button class="section-tab active" onclick="switchTab('today')">Today's Bookings <span class="tab-badge"
+                id="badge-today">—</span></button>
+        <button class="section-tab" onclick="switchTab('progress')">Ride In Progress <span class="tab-badge"
+                id="badge-progress">—</span></button>
+        <button class="section-tab" onclick="switchTab('completed')">Completed <span class="tab-badge"
+                id="badge-completed">—</span></button>
+        <button class="section-tab" onclick="switchTab('cancelled')">Cancelled <span class="tab-badge"
+                id="badge-cancelled">—</span></button>
+    </div>
+
+    <!-- ═════════════ ASSIGN CHAUFFEUR ═════════════ -->
+    <div id="panel-assign" class="section-panel">
+        <div class="filter-card">
+            <div class="filter-card-title">Filter & Assign Chauffeurs</div>
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label class="filter-label">Booking Date</label>
+                    <input type="date" class="filter-input" id="filter-date" style="width:170px;">
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label">Service Type</label>
+                    <select class="filter-select" id="filter-service">
+                        <option value="">All Types</option>
+                        <option>Pickup</option>
+                        <option>Drop</option>
+                        <option>Chauffeur Service</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label">Zone</label>
+                    <select class="filter-select" id="filter-zone">
+                        <option value="">All Zones</option>
+                        <option>Zone A (0-15 km)</option>
+                        <option>Zone B (15-30 km)</option>
+                        <option>Zone C (30-50 km)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="applyAssignFilters()">Apply Filters</button>
+            </div>
+        </div>
+
+        <!-- Assign Table -->
+        <div id="assign-table-section" style="display:none;">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Booking Results — Select & Assign</div>
+                    <div class="section-count" id="assign-count"></div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-success btn-sm" onclick="saveAllAssignments()">Save Assignments</button>
+                    <button class="btn btn-primary btn-sm" onclick="openOutlookWithExcel()">Send via Outlook</button>
+                </div>
+            </div>
+            <div class="assign-table-wrap">
+                <table class="assign-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+                            <th>Booking ID</th>
+                            <th>Time</th>
+                            <th>Client</th>
+                            <th>Passenger</th>
+                            <th>Pickup</th>
+                            <th>Drop</th>
+                            <th>Service</th>
+                            <th>Flight</th>
+                            <th>Assign Chauffeur</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assign-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═════════════ TODAY'S BOOKINGS ═════════════ -->
+    <div id="panel-today" class="section-panel active">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Today's Bookings</div>
+                <div class="section-count" id="today-count"></div>
+            </div>
+        </div>
+        <div class="cards-grid" id="today-cards"></div>
+    </div>
+
+    <!-- ═════════════ RIDE IN PROGRESS ═════════════ -->
+    <div id="panel-progress" class="section-panel">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Ride In Progress</div>
+                <div class="section-count" id="progress-count"></div>
+            </div>
+        </div>
+        <div class="cards-grid" id="progress-cards"></div>
+    </div>
+
+    <!-- ═════════════ COMPLETED ═════════════ -->
+    <div id="panel-completed" class="section-panel">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Completed</div>
+                <div class="section-count" id="completed-count"></div>
+            </div>
+        </div>
+        <div class="cards-grid" id="completed-cards"></div>
+    </div>
+
+    <!-- ═════════════ CANCELLED ═════════════ -->
+    <div id="panel-cancelled" class="section-panel">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Cancelled</div>
+                <div class="section-count" id="cancelled-count"></div>
+            </div>
+        </div>
+        <div class="cards-grid" id="cancelled-cards"></div>
+    </div>
+
+</div>
+
+
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ═══════════════════════════════════════════
+    // GLOBALS
+    // ═══════════════════════════════════════════
+    function getLocalToday() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    const today = getLocalToday();
+    let liveBookings = [];    // live data from DB
+    let liveChauffeurs = [];  // live chauffeurs from DB
+
+    // Update date label
+    document.getElementById('today-label').textContent = `Today — ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+    document.getElementById('filter-date').value = today;
+
+    // ═══════════════════════════════════════════
+    // STATS — fetched live from DB
+    // ═══════════════════════════════════════════
+    async function loadStats() {
+        try {
+            const res = await fetch('/api/mis/stats');
+            const s = await res.json();
+            document.getElementById('stat-today-total').textContent = s.todayTotal ?? 0;
+            document.getElementById('stat-pending').textContent = s.pending ?? 0;
+            document.getElementById('stat-inprogress').textContent = s.inProgress ?? 0;
+            document.getElementById('stat-completed').textContent = s.completed ?? 0;
+            document.getElementById('stat-cancelled').textContent = s.cancelled ?? 0;
+            document.getElementById('stat-mtd').textContent = s.mtd ?? 0;
+
+            document.getElementById('badge-today').textContent = s.pending ?? 0;
+            document.getElementById('badge-progress').textContent = s.inProgress ?? 0;
+            document.getElementById('badge-completed').textContent = s.completed ?? 0;
+            document.getElementById('badge-cancelled').textContent = s.cancelled ?? 0;
+            // assign badge = upcoming with no chauffeur (derived from liveBookings)
+            const noDriver = liveBookings.filter(b => b.pickUpDate === today && b.status === 'Upcoming' && !b.chauffeurName).length;
+            document.getElementById('badge-assign').textContent = noDriver;
+        } catch (e) { console.error('Stats load failed:', e); }
+    }
+
+    // ═══════════════════════════════════════════
+    // TAB SWITCHING
+    // ═══════════════════════════════════════════
+    function switchTab(tab) {
+        document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`panel-${tab}`).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if (tab === 'today') renderTodayCards();
+        if (tab === 'progress') renderProgressCards();
+        if (tab === 'completed') renderCompletedCards();
+        if (tab === 'cancelled') renderCancelledCards();
+    }
+
+    // ═══════════════════════════════════════════
+    // CARD BUILDER
+    // ═══════════════════════════════════════════
+    function statusBadge(s) {
+        const map = { 'Upcoming': 'badge-pending', 'Ride In Progress': 'badge-progress', 'Completed': 'badge-completed', 'Cancelled': 'badge-cancelled' };
+        return `<span class="badge ${map[s] || 'badge-pending'}">${s}</span>`;
+    }
+
+    function buildCard(b, cardClass, actionsHtml, showPayment = false) {
+        const hasRemarks = b.remarks && b.remarks !== '—' && b.remarks !== '';
+        const remarksHtml = hasRemarks
+            ? `<div class="remark-entry">${b.remarks}</div>`
+            : '<div style="font-size:11px;color:var(--muted);font-style:italic;">No remarks yet.</div>';
+
+        // Payment saved badge
+        const payBadge = b.chargeable
+            ? `<span class="payment-saved-badge">✓ Payment Saved</span>` : '';
+
+        // Payment panel HTML (only for completed/cancelled)
+        const paymentHtml = showPayment ? `
+        <div class="payment-panel" id="pay-panel-${b._id}">
+            <div class="payment-panel-title">Payment Details ${payBadge}</div>
+            <div class="payment-row">
+                <div class="payment-field">
+                    <label class="payment-label">Chargeable?</label>
+                    <select class="payment-select" id="pay-chargeable-${b._id}">
+                        <option value="">— Select —</option>
+                        <option ${b.chargeable === 'Yes' ? 'selected' : ''}>Yes</option>
+                        <option ${b.chargeable === 'No' ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="payment-field">
+                    <label class="payment-label">2nd Pickup Charged?</label>
+                    <select class="payment-select" id="pay-2nd-${b._id}" onchange="onSecondPickupChange('${b._id}')">
+                        <option value="">— Select —</option>
+                        <option ${b.secondPickupCharged === 'Yes' ? 'selected' : ''}>Yes</option>
+                        <option ${b.secondPickupCharged === 'No' ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="payment-field" id="pay-amt-wrap-${b._id}" style="display:${b.secondPickupCharged === 'Yes' ? 'flex' : 'none'}">
+                    <label class="payment-label">2nd Pickup Amount (AED)</label>
+                    <input class="payment-input" type="number" min="0" placeholder="0.00"
+                        id="pay-amt-${b._id}" value="${b.secondPickupAmount || ''}">
+                </div>
+                <div class="payment-field" style="justify-content:flex-end;">
+                    <button class="btn btn-success btn-sm" onclick="savePayment('${b._id}')">Save</button>
+                </div>
+            </div>
+        </div>` : '';
+
+        return `
+    <div class="booking-card ${cardClass}" id="card-${b._id}">
+        <div class="card-header">
+            <span class="card-id">#${b.bookingId}</span>
+            <span class="card-time">🕐 ${b.pickUpTime}</span>
+        </div>
+        <div class="card-client">${b.customerName} <span style="font-size:10px;font-weight:500;color:var(--muted);margin-left:4px;">(${b.clientName})</span></div>
+        <div class="card-passenger">👤 ${b.customerName} &nbsp;·&nbsp; ${b.customerMobile}</div>
+        <div class="card-route">
+            <div><span class="route-label">From</span> 📍 ${b.pickupAddress}</div>
+            <div><span class="route-label">To</span> 🏁 ${b.dropAddress}</div>
+        </div>
+        <div class="card-meta">
+            <span class="meta-pill">✈️ ${b.flightNumber}</span>
+            <span class="meta-pill">🚗 ${b.carType}</span>
+            <span class="meta-pill">📌 ${b.zone}</span>
+            <span class="meta-pill">${b.serviceType}</span>
+        </div>
+        ${statusBadge(b.status)}
+        <hr class="card-divider">
+        <div class="card-chauffeur">
+            <div class="chauffeur-dot" style="background:${b.chauffeurName === '—' || !b.chauffeurName ? '#e2e8f0' : 'var(--success)'}"></div>
+            ${!b.chauffeurName || b.chauffeurName === '—' ? '<span style="color:var(--muted)">No chauffeur assigned</span>' : `<span>${b.chauffeurName}</span><span style="color:var(--muted);">· ${b.chauffeurPhone}</span>`}
+        </div>
+        <div class="card-actions">${actionsHtml}</div>
+        ${paymentHtml}
+        <div class="remarks-section" id="remarks-${b._id}">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Remarks</div>
+            ${remarksHtml}
+            <div class="remark-form">
+                <input class="remark-input" placeholder="Add a remark…" id="remark-text-${b._id}">
+                <input class="remark-author" placeholder="Your name / initials" id="remark-author-${b._id}">
+                <button class="btn btn-primary btn-sm" onclick="addRemark('${b._id}')">Add Remark</button>
+            </div>
+        </div>
+    </div>`;
+    }
+
+    // ═══════════════════════════════════════════
+    // RENDER SECTIONS (live data)
+    // ═══════════════════════════════════════════
+    function getCardClassForStatus(status) {
+        const map = {
+            'Upcoming': 'pending',
+            'Ride In Progress': 'progress',
+            'Completed': 'completed',
+            'Cancelled': 'cancelled'
+        };
+        return map[status] || 'pending';
+    }
+
+    function getTodayActionsForStatus(b) {
+        if (b.status === 'Ride In Progress') {
+            return `
+        <button class="btn btn-success btn-sm" onclick="moveStatus('${b._id}', 'Completed')">Mark Completed</button>
+        <button class="btn btn-danger btn-sm" onclick="moveStatus('${b._id}', 'Cancelled')">Cancel</button>
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Back to Upcoming</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">Remarks</button>
+    `;
+        }
+
+        if (b.status === 'Completed') {
+            return `
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Ride In Progress')">Back to In Progress</button>
+        <button class="btn btn-primary btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Reactivate to Upcoming</button>
+        <button class="btn btn-success btn-sm" onclick="togglePayment('${b._id}')">Payment</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">View Remarks</button>
+    `;
+        }
+
+        if (b.status === 'Cancelled') {
+            return `
+        <button class="btn btn-primary btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Reactivate to Upcoming</button>
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Ride In Progress')">Back to In Progress</button>
+        <button class="btn btn-success btn-sm" onclick="togglePayment('${b._id}')">Payment</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">Remarks</button>
+    `;
+        }
+
+        return `
+        <button class="btn btn-purple btn-sm" onclick="moveStatus('${b._id}', 'Ride In Progress')">Start Ride</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">Remarks</button>
+    `;
+    }
+
+    function renderTodayCards() {
+        const items = liveBookings.filter(b => b.pickUpDate === today);
+        const container = document.getElementById('today-cards');
+        document.getElementById('today-count').textContent = `${items.length} booking${items.length !== 1 ? 's' : ''} today`;
+        if (!items.length) { container.innerHTML = emptyState('No Bookings Today', "Today's bookings will appear here."); return; }
+        container.innerHTML = items.map(b => buildCard(
+            b,
+            getCardClassForStatus(b.status),
+            getTodayActionsForStatus(b),
+            b.status === 'Completed' || b.status === 'Cancelled'
+        )).join('');
+    }
+
+    function renderProgressCards() {
+        const items = liveBookings.filter(b => b.pickUpDate === today && b.status === 'Ride In Progress');
+        const container = document.getElementById('progress-cards');
+        document.getElementById('progress-count').textContent = `${items.length} ride${items.length !== 1 ? 's' : ''} currently in progress`;
+        if (!items.length) { container.innerHTML = emptyState('No Rides In Progress', 'Start a ride from the Today\'s Bookings section.'); return; }
+        container.innerHTML = items.map(b => buildCard(b, 'progress', `
+        <button class="btn btn-success btn-sm" onclick="moveStatus('${b._id}', 'Completed')">Mark Completed</button>
+        <button class="btn btn-danger btn-sm" onclick="moveStatus('${b._id}', 'Cancelled')">Cancel</button>
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Back to Upcoming</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">Remarks</button>
+    `)).join('');
+    }
+
+    function renderCompletedCards() {
+        const items = liveBookings.filter(b => b.pickUpDate === today && b.status === 'Completed');
+        const container = document.getElementById('completed-cards');
+        document.getElementById('completed-count').textContent = `${items.length} booking${items.length !== 1 ? 's' : ''} completed today`;
+        if (!items.length) { container.innerHTML = emptyState('No Completed Rides Yet', 'Completed rides will appear here.'); return; }
+        container.innerHTML = items.map(b => buildCard(b, 'completed', `
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Ride In Progress')">Back to In Progress</button>
+        <button class="btn btn-primary btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Reactivate to Upcoming</button>
+        <button class="btn btn-success btn-sm" onclick="togglePayment('${b._id}')">Payment</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">View Remarks</button>
+    `, true)).join('');
+    }
+
+    function renderCancelledCards() {
+        const items = liveBookings.filter(b => b.pickUpDate === today && b.status === 'Cancelled');
+        const container = document.getElementById('cancelled-cards');
+        document.getElementById('cancelled-count').textContent = `${items.length} booking${items.length !== 1 ? 's' : ''} cancelled today`;
+        if (!items.length) { container.innerHTML = emptyState('No Cancellations', "Great — no cancellations recorded today."); return; }
+        container.innerHTML = items.map(b => buildCard(b, 'cancelled', `
+        <button class="btn btn-primary btn-sm" onclick="moveStatus('${b._id}', 'Upcoming')">Reactivate to Upcoming</button>
+        <button class="btn btn-warning btn-sm" onclick="moveStatus('${b._id}', 'Ride In Progress')">Back to In Progress</button>
+        <button class="btn btn-success btn-sm" onclick="togglePayment('${b._id}')">Payment</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleRemarks('${b._id}')">Remarks</button>
+    `, true)).join('');
+    }
+
+    function emptyState(title, sub) {
+        return `<div class="empty-state" style="grid-column:1/-1"><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+    }
+
+    // ═══════════════════════════════════════════
+    // ACTIONS (live DB)
+    // ═══════════════════════════════════════════
+    async function moveStatus(id, newStatus) {
+        try {
+            const res = await fetch(`/api/mis/bookings/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (!res.ok) { showToast('Failed to update status.', 'error'); return; }
+            // Update local cache
+            const b = liveBookings.find(x => x._id === id);
+            if (b) b.status = newStatus;
+            await loadStats();
+            const activePanel = document.querySelector('.section-panel.active').id.replace('panel-', '');
+            if (activePanel === 'today') renderTodayCards();
+            if (activePanel === 'progress') renderProgressCards();
+            if (activePanel === 'completed') renderCompletedCards();
+            if (activePanel === 'cancelled') renderCancelledCards();
+            showToast(`Booking moved to "${newStatus}"`, 'success');
+        } catch (e) { showToast('Network error.', 'error'); }
+    }
+
+    function toggleRemarks(id) {
+        const el = document.getElementById(`remarks-${id}`);
+        el.classList.toggle('open');
+    }
+
+    function togglePayment(id) {
+        const el = document.getElementById(`pay-panel-${id}`);
+        if (el) el.classList.toggle('open');
+    }
+
+    function onSecondPickupChange(id) {
+        const sel = document.getElementById(`pay-2nd-${id}`);
+        const wrap = document.getElementById(`pay-amt-wrap-${id}`);
+        if (wrap) wrap.style.display = sel.value === 'Yes' ? 'flex' : 'none';
+    }
+
+    async function savePayment(id) {
+        const chargeable = document.getElementById(`pay-chargeable-${id}`).value;
+        const secondPickupCharged = document.getElementById(`pay-2nd-${id}`).value;
+        const amtEl = document.getElementById(`pay-amt-${id}`);
+        const secondPickupAmount = amtEl ? amtEl.value : 0;
+
+        if (!chargeable) { showToast('Please select Chargeable status.', 'error'); return; }
+        if (!secondPickupCharged) { showToast('Please select 2nd Pickup Charged status.', 'error'); return; }
+
+        try {
+            const res = await fetch(`/api/mis/bookings/${id}/payment`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chargeable, secondPickupCharged, secondPickupAmount })
+            });
+            if (!res.ok) { showToast('Failed to save payment.', 'error'); return; }
+            // Update local cache
+            const b = liveBookings.find(x => x._id === id);
+            if (b) {
+                b.chargeable = chargeable;
+                b.secondPickupCharged = secondPickupCharged;
+                b.secondPickupAmount = Number(secondPickupAmount) || 0;
+            }
+            showToast('Payment details saved!', 'success');
+            // Refresh the active panel so the saved badge updates
+            const activePanel = document.querySelector('.section-panel.active').id.replace('panel-', '');
+            if (activePanel === 'completed') renderCompletedCards();
+            if (activePanel === 'cancelled') renderCancelledCards();
+        } catch (e) { showToast('Network error.', 'error'); }
+    }
+
+    async function addRemark(id) {
+        const text = document.getElementById(`remark-text-${id}`).value.trim();
+        const author = document.getElementById(`remark-author-${id}`).value.trim();
+        if (!text || !author) { showToast('Please fill in both remark and author name.', 'error'); return; }
+        try {
+            const res = await fetch(`/api/mis/bookings/${id}/remark`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ remark: text, author })
+            });
+            if (!res.ok) { showToast('Failed to save remark.', 'error'); return; }
+            const { booking } = await res.json();
+            // Update local cache
+            const b = liveBookings.find(x => x._id === id);
+            if (b) b.remarks = booking.remarks;
+            // Re-render the card
+            const activePanel = document.querySelector('.section-panel.active').id.replace('panel-', '');
+            if (activePanel === 'today') renderTodayCards();
+            if (activePanel === 'progress') renderProgressCards();
+            if (activePanel === 'completed') renderCompletedCards();
+            if (activePanel === 'cancelled') renderCancelledCards();
+            setTimeout(() => { const el = document.getElementById(`remarks-${id}`); if (el) el.classList.add('open'); }, 50);
+            showToast('Remark added!', 'success');
+        } catch (e) { showToast('Network error.', 'error'); }
+    }
+
+    // ═══════════════════════════════════════════
+    // ASSIGN CHAUFFEUR (live DB)
+    // ═══════════════════════════════════════════
+    async function applyAssignFilters() {
+        const date = document.getElementById('filter-date').value;
+        const service = document.getElementById('filter-service').value;
+        const zone = document.getElementById('filter-zone').value;
+
+        try {
+            const res = await fetch('/api/mis/bookings/by-date', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date,
+                    filters: {
+                        ...(service ? { serviceType: service } : {}),
+                        ...(zone ? { zone } : {})
+                    }
+                })
+            });
+            const results = await res.json();
+
+            document.getElementById('assign-table-section').style.display = 'block';
+            document.getElementById('assign-count').textContent = `${results.length} booking${results.length !== 1 ? 's' : ''} found`;
+
+            const tbody = document.getElementById('assign-table-body');
+            if (!results.length) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted);font-style:italic;">No bookings found for selected filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = results.map(b => `
+            <tr data-id="${b._id}">
+                <td><input type="checkbox" class="row-check"></td>
+                <td style="font-family:monospace;font-weight:700;color:var(--primary)">${b.bookingId}</td>
+                <td style="font-weight:600">${b.pickUpTime}</td>
+                <td>${b.clientName}</td>
+                <td>${b.customerName}</td>
+                <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.pickupAddress}">${b.pickupAddress}</td>
+                <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.dropAddress}">${b.dropAddress}</td>
+                <td><span class="badge" style="background:#f1f5f9;color:#475569">${b.serviceType}</span></td>
+                <td style="font-family:monospace;font-size:11px;">${b.flightNumber || '—'}</td>
+                <td>
+                    <select class="chauffeur-select" data-id="${b._id}" onchange="previewAssign(this)">
+                        <option value="">— Unassigned —</option>
+                        ${liveChauffeurs.map(c => `<option ${b.chauffeurName === c.name ? 'selected' : ''} value="${c.name}">${c.name}</option>`).join('')}
+                    </select>
+                </td>
+                <td>${statusBadge(b.status)}</td>
+            </tr>
+            `).join('');
+        } catch (e) { showToast('Failed to load bookings.', 'error'); }
+    }
+
+    function previewAssign(select) {
+        select.closest('tr').style.background = '#eff6ff';
+    }
+
+    function toggleSelectAll(cb) {
+        document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+        document.querySelectorAll('#assign-table-body tr').forEach(tr => tr.style.background = cb.checked ? '#eff6ff' : '');
+    }
+
+    async function saveAllAssignments() {
+        const rows = document.querySelectorAll('#assign-table-body tr');
+        const promises = [];
+        rows.forEach(row => {
+            const id = row.getAttribute('data-id');
+            const sel = row.querySelector('.chauffeur-select');
+            if (!sel || !sel.value) return;
+            const chauffeur = liveChauffeurs.find(c => c.name === sel.value);
+            if (!chauffeur) return;
+            promises.push(
+                fetch(`/api/mis/bookings/${id}/assign-chauffeur`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chauffeurName: chauffeur.name, chauffeurPhone: chauffeur.phone })
+                })
+            );
+        });
+        await Promise.all(promises);
+        await loadStats();
+        showToast(`Chauffeur(s) assigned successfully!`, 'success');
+    }
+
+    // ═══════════════════════════════════════════
+    // OUTLOOK EXPORT
+    // ═══════════════════════════════════════════
+    function openOutlookWithExcel() {
+        const rows = document.querySelectorAll('#assign-table-body tr');
+        const selected = [];
+        rows.forEach(row => {
+            const cb = row.querySelector('.row-check');
+            if (!cb || !cb.checked) return;
+            const id = row.getAttribute('data-id');
+            const b = liveBookings.find(x => x._id === id);
+            if (b) selected.push(b);
+        });
+        if (!selected.length) { showToast('Select at least one booking row first.', 'error'); return; }
+
+        // Build CSV content
+        const header = ['Booking ID', 'Date', 'Time', 'Client', 'Passenger', 'Mobile', 'Pickup', 'Drop', 'Service', 'Flight', 'Car', 'Chauffeur', 'Status'];
+        const rows2 = selected.map(b => [
+            b.bookingId, b.pickUpDate, b.pickUpTime, b.clientName, b.customerName,
+            b.customerMobile, b.pickupAddress, b.dropAddress, b.serviceType,
+            b.flightNumber || '—', b.carType, b.chauffeurName, b.status
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+        const csv = [header.join(','), ...rows2].join('\n');
+
+        // Download CSV (Excel opens .csv files)
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = document.getElementById('filter-date').value || new Date().toISOString().split('T')[0];
+        a.download = `BizTravex_Bookings_${dateStr}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Open Outlook compose window
+        const subject = encodeURIComponent(`BizTravex Bookings — ${dateStr}`);
+        const body = encodeURIComponent(`Hi,\n\nPlease find the attached booking schedule for ${dateStr}.\n\nTotal records: ${selected.length}\n\nRegards,\nBizTravex Operations`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+
+        showToast(`📧 Outlook opened with ${selected.length} booking(s). Attach the downloaded CSV.`, 'success');
+    }
+
+    // ═══════════════════════════════════════════
+    // MANUAL BOOKING MODAL (live DB)
+    // ═══════════════════════════════════════════
+    function openManualModal() {
+        document.getElementById('m-date').value = today;
+        document.getElementById('manual-modal').classList.add('open');
+    }
+    function closeManualModal() {
+        document.getElementById('manual-modal').classList.remove('open');
+    }
+    async function saveManualBooking() {
+        const id = document.getElementById('m-id').value.trim();
+        const date = document.getElementById('m-date').value;
+        const time = document.getElementById('m-time').value;
+        const client = document.getElementById('m-client').value.trim();
+        const passenger = document.getElementById('m-passenger').value.trim();
+        const mobile = document.getElementById('m-mobile').value.trim();
+        const pickup = document.getElementById('m-pickup').value.trim();
+        const drop = document.getElementById('m-drop').value.trim();
+        const service = document.getElementById('m-service').value;
+        const car = document.getElementById('m-car').value.trim();
+        const flight = document.getElementById('m-flight').value.trim();
+        const vendor = document.getElementById('m-vendor').value.trim();
+        const pax = document.getElementById('m-pax').value || '1';
+        const infants = document.getElementById('m-infants').value || '0';
+        const babies = document.getElementById('m-babies').value || '0';
+        const luggage = document.getElementById('m-luggage').value || '0';
+
+        if (!id || !date || !client || !pickup || !drop) {
+            showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/mis/bookings/manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookingId: id, pickUpDate: date, pickUpTime: time || '00:00',
+                    clientName: client, customerName: passenger || 'TBD', customerMobile: mobile,
+                    pickupAddress: pickup, dropAddress: drop, serviceType: service,
+                    carType: car, flightNumber: flight, vendorName: vendor,
+                    noOfPassengers: pax, noOfInfants: infants, noOfBaby: babies, noOfLuggages: luggage
+                })
+            });
+            if (!res.ok) { showToast('Failed to save booking.', 'error'); return; }
+            const { booking } = await res.json();
+            liveBookings.push(booking);
+            closeManualModal();
+            await loadStats();
+            renderTodayCards();
+            showToast('Manual booking created!', 'success');
+        } catch (e) { showToast('Network error.', 'error'); }
+    }
+
+    // ═══════════════════════════════════════════
+    // TOAST
+    // ═══════════════════════════════════════════
+    let toastTimer;
+    function showToast(msg, type) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = `toast ${type} show`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // ═══════════════════════════════════════════
+    // MOCK SEED — used when DB has no bookings for today
+    // ═══════════════════════════════════════════
+    const MOCK_CHAUFFEURS = [
+        { name: 'Ahmed Al Mansoori', phone: '+971501234567' },
+        { name: 'Raj Kumar', phone: '+971509876543' },
+        { name: 'Mark Stevens', phone: '+971554433221' },
+        { name: 'Carlos Rivera', phone: '+971561122334' },
+        { name: 'Hassan Al Farsi', phone: '+971587654321' },
+        { name: 'David Okonkwo', phone: '+971561009988' },
+    ];
+
+    function getMockBookings() {
+        return [
+            { _id: 'm1', bookingId: 'BT-20260706-01', pickUpDate: today, pickUpTime: '05:45', clientName: 'Emirates Tours', customerName: 'James Wilson', customerMobile: '+447700123456', pickupAddress: 'Dubai International Airport T1', dropAddress: 'Burj Al Arab Hotel', serviceType: 'Pickup', zone: 'Zone B (15-30 km)', carType: 'Mercedes S-Class', chauffeurName: 'Ahmed Al Mansoori', chauffeurPhone: '+971501234567', status: 'Completed', remarks: 'VIP guest — handle with care.', flightNumber: 'EK203' },
+            { _id: 'm2', bookingId: 'BT-20260706-02', pickUpDate: today, pickUpTime: '07:00', clientName: 'Luxury Escapes', customerName: 'Priya Sharma', customerMobile: '+919988776655', pickupAddress: 'Atlantis The Palm, Dubai', dropAddress: 'DXB Airport T3', serviceType: 'Drop', zone: 'Zone B (15-30 km)', carType: 'Lexus ES350', chauffeurName: '', chauffeurPhone: '', status: 'Upcoming', remarks: '', flightNumber: 'AI102' },
+            { _id: 'm3', bookingId: 'BT-20260706-03', pickUpDate: today, pickUpTime: '08:15', clientName: 'Al Habtoor Travel', customerName: 'Francois Dubois', customerMobile: '+33612345678', pickupAddress: 'Four Seasons DIFC', dropAddress: 'Abu Dhabi Corniche Hotel', serviceType: 'Chauffeur Service', zone: 'Zone C (30-50 km)', carType: 'Mercedes S-Class', chauffeurName: 'Raj Kumar', chauffeurPhone: '+971509876543', status: 'Ride In Progress', remarks: '', flightNumber: '—' },
+            { _id: 'm4', bookingId: 'BT-20260706-04', pickUpDate: today, pickUpTime: '09:30', clientName: 'Rotana Hotels', customerName: 'Sarah Al Maktoum', customerMobile: '+97150999888', pickupAddress: 'DXB Airport T2', dropAddress: 'Rotana Media City Hotel', serviceType: 'Pickup', zone: 'Zone A (0-15 km)', carType: 'Toyota Camry', chauffeurName: 'Mark Stevens', chauffeurPhone: '+971554433221', status: 'Completed', remarks: 'Flight arrived 20 mins early.', flightNumber: 'FZ501' },
+            { _id: 'm5', bookingId: 'BT-20260706-05', pickUpDate: today, pickUpTime: '10:00', clientName: 'Emirates Tours', customerName: 'Oliver Brown', customerMobile: '+447901234567', pickupAddress: 'Madinat Jumeirah', dropAddress: 'DWC Airport', serviceType: 'Drop', zone: 'Zone C (30-50 km)', carType: 'Lexus LX570', chauffeurName: 'Carlos Rivera', chauffeurPhone: '+971561122334', status: 'Upcoming', remarks: '', flightNumber: 'EK099' },
+            { _id: 'm6', bookingId: 'BT-20260706-06', pickUpDate: today, pickUpTime: '11:30', clientName: 'Luxury Escapes', customerName: 'Ming Wei', customerMobile: '+8613912345678', pickupAddress: 'DXB Airport T1', dropAddress: 'The Address Downtown', serviceType: 'Pickup', zone: 'Zone A (0-15 km)', carType: 'Mercedes E-Class', chauffeurName: '', chauffeurPhone: '', status: 'Cancelled', remarks: 'Guest missed flight. Rescheduled for tomorrow.', flightNumber: 'CZ670' },
+            { _id: 'm7', bookingId: 'BT-20260706-07', pickUpDate: today, pickUpTime: '13:00', clientName: 'Al Habtoor Travel', customerName: 'Maria Gonzalez', customerMobile: '+34690000123', pickupAddress: 'Palazzo Versace Hotel', dropAddress: 'DXB Airport T3', serviceType: 'Drop', zone: 'Zone B (15-30 km)', carType: 'Toyota Camry', chauffeurName: 'Hassan Al Farsi', chauffeurPhone: '+971587654321', status: 'Upcoming', remarks: '', flightNumber: 'IB6841' },
+            { _id: 'm8', bookingId: 'BT-20260706-08', pickUpDate: today, pickUpTime: '14:30', clientName: 'Rotana Hotels', customerName: 'Robert Klauber', customerMobile: '+4915122334455', pickupAddress: 'DXB Airport T3', dropAddress: 'Habtoor Grand Resort', serviceType: 'Pickup', zone: 'Zone B (15-30 km)', carType: 'Lexus ES350', chauffeurName: 'Ahmed Al Mansoori', chauffeurPhone: '+971501234567', status: 'Ride In Progress', remarks: 'Guest has 3 heavy bags.', flightNumber: 'LH633' },
+            { _id: 'm9', bookingId: 'BT-20260706-09', pickUpDate: today, pickUpTime: '16:00', clientName: 'IndiGo Corporate', customerName: 'Neha Kapoor', customerMobile: '+919911223344', pickupAddress: 'The Oberoi Dubai', dropAddress: 'DXB Airport T2', serviceType: 'Drop', zone: 'Zone A (0-15 km)', carType: 'Toyota Camry', chauffeurName: '', chauffeurPhone: '', status: 'Upcoming', remarks: '', flightNumber: '6E105' },
+            { _id: 'm10', bookingId: 'BT-20260706-10', pickUpDate: today, pickUpTime: '17:45', clientName: 'Emirates Tours', customerName: 'Tariq Al Ansari', customerMobile: '+97155667788', pickupAddress: 'DXB Airport T1', dropAddress: 'JW Marriott Marquis Dubai', serviceType: 'Pickup', zone: 'Zone A (0-15 km)', carType: 'Mercedes E-Class', chauffeurName: 'David Okonkwo', chauffeurPhone: '+971561009988', status: 'Upcoming', remarks: 'VIP — airport meet & greet arranged.', flightNumber: 'EK451' },
+            { _id: 'm11', bookingId: 'BT-20260706-11', pickUpDate: today, pickUpTime: '19:00', clientName: 'Luxury Escapes', customerName: 'Sophie Martin', customerMobile: '+33698765432', pickupAddress: 'One&Only The Palm Dubai', dropAddress: 'DXB Airport T2', serviceType: 'Drop', zone: 'Zone B (15-30 km)', carType: 'Toyota Camry', chauffeurName: 'Raj Kumar', chauffeurPhone: '+971509876543', status: 'Upcoming', remarks: '', flightNumber: 'AF050' },
+            { _id: 'm12', bookingId: 'BT-20260706-12', pickUpDate: today, pickUpTime: '21:00', clientName: 'Al Habtoor Travel', customerName: 'Chen Bao', customerMobile: '+8618888776655', pickupAddress: 'DXB Airport T3', dropAddress: 'Palace Downtown Dubai', serviceType: 'Pickup', zone: 'Zone A (0-15 km)', carType: 'Lexus ES350', chauffeurName: '', chauffeurPhone: '', status: 'Upcoming', remarks: 'Late night — confirm chauffeur.', flightNumber: 'CZ358' },
+        ];
+    }
+
+    // ═══════════════════════════════════════════
+    // INIT — load live data from DB; fall back to mock if empty
+    // ═══════════════════════════════════════════
+    async function init() {
+        try {
+            const [bookingsRes, chauffRes] = await Promise.all([
+                fetch('/api/mis/bookings/today'),
+                fetch('/api/mis/chauffeurs')
+            ]);
+            liveBookings = await bookingsRes.json();
+            liveChauffeurs = await chauffRes.json();
+        } catch (e) {
+            console.warn('Could not load live data, falling back to mock.', e);
+        }
+
+        // Merge mock data for local testing, even when DB already has live rows.
+        // Dedupe by bookingId so a real DB row wins over the same mock row.
+        if (!Array.isArray(liveBookings)) liveBookings = [];
+        const mockBookings = getMockBookings();
+        const liveIds = new Set(liveBookings.map(b => b.bookingId));
+        liveBookings = [...liveBookings, ...mockBookings.filter(b => !liveIds.has(b.bookingId))];
+        if (!Array.isArray(liveChauffeurs) || liveChauffeurs.length === 0) {
+            liveChauffeurs = MOCK_CHAUFFEURS;
+        }
+
+        await loadStats();
+        renderTodayCards();
+    }
+    init();
+</script>
+</body>
+
+</html>

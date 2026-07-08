@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizTravex — Chauffeur Attendance</title>
+    <meta name="description" content="BizTravex Chauffeur Attendance Management — track daily presence, shift statuses and overtime for your fleet.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #f0f2f7;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --success: #16a34a;
+            --success-light: #f0fdf4;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --warning: #d97706;
+            --warning-light: #fffbeb;
+            --purple: #7c3aed;
+            --purple-light: #f5f3ff;
+            --night: #0e4d91;
+            --night-light: #dbeafe;
+            --nav-bg: #0f172a;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── PAGE LAYOUT ─────────────────────────────── */
+        .page { max-width: 1400px; margin: 0 auto; padding: 0 24px 48px; }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px 0 20px;
+            flex-wrap: wrap;
+        }
+        .page-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -.4px;
+        }
+        .page-subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 3px;
+        }
+
+
+        .chauffeur-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 20px;
+        }
+
+        .chauffeur-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: box-shadow .2s, transform .2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .chauffeur-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        /* card colour accent strip based on today status */
+        .chauffeur-card::before {
+            content: '';
+            display: block;
+            height: 4px;
+            background: var(--border);
+            transition: background .3s;
+        }
+        .chauffeur-card.status-day::before    { background: linear-gradient(90deg,#16a34a,#4ade80); }
+        .chauffeur-card.status-night::before  { background: linear-gradient(90deg,#1e40af,#60a5fa); }
+        .chauffeur-card.status-absent::before { background: linear-gradient(90deg,#dc2626,#f87171); }
+        .chauffeur-card.status-leave::before  { background: linear-gradient(90deg,#d97706,#fbbf24); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 18px 12px;
+        }
+        .avatar {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#6366f1,#8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            letter-spacing: -.5px;
+        }
+        .card-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .card-mobile {
+            font-size: 11.5px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* today status badge */
+        .today-badge {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            white-space: nowrap;
+        }
+        .today-badge.unmarked  { background:#f1f5f9; color:#64748b; }
+        .today-badge.day       { background:var(--success-light); color:var(--success); }
+        .today-badge.night     { background:var(--night-light); color:var(--night); }
+        .today-badge.absent    { background:var(--danger-light); color:var(--danger); }
+        .today-badge.leave     { background:var(--warning-light); color:var(--warning); }
+
+        /* ── MTD STATS ───────────────────────────────── */
+        .mtd-section {
+            padding: 0 18px 14px;
+        }
+        .mtd-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 10px;
+        }
+        .mtd-rows { display: flex; flex-direction: column; gap: 6px; }
+
+        .mtd-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 12px;
+            border-radius: 8px;
+            background: var(--bg);
+        }
+        .mtd-row-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .mtd-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-day    { background: #16a34a; }
+        .dot-night  { background: #1e40af; }
+        .dot-absent { background: #dc2626; }
+        .dot-leave  { background: #d97706; }
+        .dot-ot     { background: #7c3aed; }
+
+        .mtd-val {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .mtd-val.ot { color: var(--purple); }
+
+        .mtd-unit {
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-left: 3px;
+        }
+
+        /* ── CARD ACTIONS ────────────────────────────── */
+        .card-actions {
+            margin-top: auto;
+            padding: 14px 18px 18px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            flex: 1;
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all .18s;
+            text-align: center;
+            letter-spacing: .1px;
+        }
+        .btn:active { transform: scale(.97); }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-ghost {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { background: #e2e8f0; }
+
+        /* ── MODALS ──────────────────────────────────── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,.55);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 440px;
+            padding: 28px;
+            animation: slideUp .22s ease;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateY(20px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .modal-sub {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .radio-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all .15s;
+            font-size: 13.5px;
+            font-weight: 600;
+        }
+        .radio-label:hover { border-color: var(--primary); background: var(--primary-light); }
+        .radio-label input[type=radio] { accent-color: var(--primary); width: 16px; height: 16px; }
+        .radio-label.selected { border-color: var(--primary); background: var(--primary-light); }
+        .radio-label .status-icon { font-size: 18px; }
+
+        .modal-field { margin-bottom: 18px; }
+        .modal-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+        .modal-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--surface);
+            transition: border .15s;
+        }
+        .modal-input:focus { outline: none; border-color: var(--primary); }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-modal-cancel {
+            padding: 10px 20px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .btn-modal-cancel:hover { background: #e2e8f0; }
+        .btn-modal-confirm {
+            padding: 10px 22px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .btn-modal-confirm:hover { background: #1d4ed8; }
+
+        /* overtime result callout */
+        .ot-result {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: var(--purple-light);
+            border: 1.5px solid #c4b5fd;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--purple);
+            display: none;
+        }
+        .ot-result.show { display: block; }
+
+        /* ── TOAST ───────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            min-width: 260px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            z-index: 9999;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .3s cubic-bezier(.34,1.56,.64,1);
+            pointer-events: none;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error   { background: var(--danger); }
+        .toast.info    { background: var(--primary); }
+
+        /* ── LOADING ─────────────────────────────────── */
+        .loading-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .spinner {
+            display: inline-block;
+            width: 28px; height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 14px; }
+        .empty-state .empty-title { font-size: 17px; font-weight: 700; color: var(--text); }
+        .empty-state .empty-sub { font-size: 13px; margin-top: 6px; }
+
+        /* ── HISTORY MODAL TABLE ─────────────────────── */
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 14px; }
+        .hist-table th {
+            background: var(--bg);
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--muted);
+        }
+        .hist-table td {
+            padding: 9px 10px;
+            border-top: 1px solid var(--border);
+            color: var(--text);
+        }
+        .hist-scroll { max-height: 340px; overflow-y: auto; }
+        .hist-modal {
+            max-width: 580px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="bg-slate-900 text-white shadow-md mb-6">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="font-black tracking-wider text-sm uppercase text-slate-100">BizTravex</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1 sm:gap-3 text-xs font-bold tracking-wide uppercase">
+            <a href="http://localhost:3000" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Home Hub</a>
+            <a href="http://localhost:4000/mis.html" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">MIS</a>
+            <a href="http://localhost:4001/expense.html" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Expenses</a>
+            <a href="http://localhost:5000/attendance.html" class="px-3 py-2 rounded-md bg-red-600 text-white shadow">Attendance</a>
+            <a href="http://localhost:6000/billing.html" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Billing</a>
+            <a href="http://localhost:7000/reporting.html" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Reports</a>
+            <a href="http://localhost:8000/settings.html" class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">Settings</a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="top-bar">
+        <div>
+            <div class="page-title">Chauffeur Attendance</div>
+            <div class="page-subtitle" id="today-label">Loading...</div>
+        </div>
+        <button class="btn btn-ghost" style="flex:none;padding:9px 18px;font-size:13px;" onclick="loadAll()">
+            Refresh
+        </button>
+    </div>
+
+
+    <!-- CHAUFFEUR GRID -->
+    <div class="chauffeur-grid" id="chauffeur-grid">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <div>Loading chauffeur data…</div>
+        </div>
+    </div>
+</div>
+
+<!-- MARK TODAY MODAL -->
+<div class="modal-overlay" id="mark-modal">
+    <div class="modal">
+        <div class="modal-title">Mark Today's Attendance</div>
+        <div class="modal-sub" id="mark-modal-sub">Select attendance status for <strong id="mark-name"></strong> on today's date.</div>
+
+        <div class="radio-group" id="status-radios">
+            <label class="radio-label" id="lbl-day">
+                <input type="radio" name="attendance-status" value="Present-Day" id="r-day">
+                <span class="status-icon"></span>
+                <span>Present – Day Shift</span>
+            </label>
+            <label class="radio-label" id="lbl-night">
+                <input type="radio" name="attendance-status" value="Present-Night" id="r-night">
+                <span class="status-icon"></span>
+                <span>Present – Night Shift</span>
+            </label>
+            <label class="radio-label" id="lbl-absent">
+                <input type="radio" name="attendance-status" value="Absent" id="r-absent">
+                <span class="status-icon"></span>
+                <span>Absent</span>
+            </label>
+            <label class="radio-label" id="lbl-leave">
+                <input type="radio" name="attendance-status" value="Leave" id="r-leave">
+                <span class="status-icon"></span>
+                <span>On Leave</span>
+            </label>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal('mark-modal')">Cancel</button>
+            <button class="btn-modal-confirm" onclick="submitMarkToday()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ENTER LAST TIME MODAL -->
+<div class="modal-overlay" id="lasttime-modal">
+    <div class="modal">
+        <div class="modal-title">Enter Last Time</div>
+        <div class="modal-sub">
+            Enter the actual clock-out / end time for <strong id="lt-name"></strong>.
+            <br><span style="color:#dc2626;font-weight:600;">Attendance must be marked first.</span>
+        </div>
+
+        <div class="modal-field">
+            <label class="modal-label" for="lt-time-input">Actual End Time (HH:MM)</label>
+            <input type="time" class="modal-input" id="lt-time-input" required>
+        </div>
+
+        <div class="ot-result" id="ot-result-box"></div>
+
+        <div class="modal-actions" style="margin-top:18px;">
+            <button class="btn-modal-cancel" onclick="closeModal('lasttime-modal')">Cancel</button>
+            <button class="btn-modal-confirm" onclick="submitLastTime()">Calculate &amp; Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="hist-modal">
+    <div class="modal hist-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div class="modal-title">Attendance History</div>
+            <button class="btn-modal-cancel" onclick="closeModal('hist-modal')">✕ Close</button>
+        </div>
+        <div class="modal-sub" id="hist-modal-sub"></div>
+        <div class="hist-scroll">
+            <table class="hist-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Last Time</th>
+                        <th>OT (min)</th>
+                    </tr>
+                </thead>
+                <tbody id="hist-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ─────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────
+    let allData = [];
+    let activeId = null;   // chauffeurId being acted on
+    let activeName = null;
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    document.getElementById('today-label').textContent =
+        `Today — ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}`;
+
+    loadAll();
+
+    // ─────────────────────────────────────────────
+    // RADIO SELECTION STYLING
+    // ─────────────────────────────────────────────
+    document.querySelectorAll('.radio-label input[type=radio]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('.radio-label').forEach(l => l.classList.remove('selected'));
+            radio.closest('.radio-label').classList.add('selected');
+        });
+    });
+
+    // ─────────────────────────────────────────────
+    // FETCH & RENDER
+    // ─────────────────────────────────────────────
+    async function loadAll() {
+        const grid = document.getElementById('chauffeur-grid');
+        grid.innerHTML = `<div class="loading-state"><div class="spinner"></div><div>Loading chauffeur data…</div></div>`;
+
+        try {
+            const res = await fetch('/api/attendance/chauffeurs-with-mtd');
+            if (!res.ok) throw new Error('Server error');
+            allData = await res.json();
+            renderGrid(allData);
+            renderSummary(allData);
+        } catch (e) {
+            grid.innerHTML = `<div class="empty-state"><div class="empty-title">Could not load data</div><div class="empty-sub">${e.message}</div></div>`;
+        }
+    }
+
+    function renderSummary(data) {
+        // Summary strip removed — no-op kept for backward compatibility
+    }
+
+    function getCardClass(status) {
+        if (!status) return '';
+        if (status === 'Present-Day')   return 'status-day';
+        if (status === 'Present-Night') return 'status-night';
+        if (status === 'Absent')        return 'status-absent';
+        if (status === 'Leave')         return 'status-leave';
+        return '';
+    }
+
+    function getTodayBadge(status) {
+        if (!status) return `<span class="today-badge unmarked">Not Marked</span>`;
+        if (status === 'Present-Day')   return `<span class="today-badge day">Day</span>`;
+        if (status === 'Present-Night') return `<span class="today-badge night">Night</span>`;
+        if (status === 'Absent')        return `<span class="today-badge absent">Absent</span>`;
+        if (status === 'Leave')         return `<span class="today-badge leave">Leave</span>`;
+        return '';
+    }
+
+    function fmtOT(minutes) {
+        if (!minutes) return '<span class="mtd-val ot">0</span><span class="mtd-unit">hrs</span>';
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        const display = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        return `<span class="mtd-val ot">${display}</span>`;
+    }
+
+    function getInitials(name) {
+        return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    function renderGrid(data) {
+        const grid = document.getElementById('chauffeur-grid');
+        if (!data.length) {
+            grid.innerHTML = `<div class="empty-state"><div class="empty-title">No Active Chauffeurs</div><div class="empty-sub">Add chauffeurs in the Settings page to see them here.</div></div>`;
+            return;
+        }
+
+        grid.innerHTML = data.map(c => {
+            const cardClass = getCardClass(c.todayStatus);
+            const badge = getTodayBadge(c.todayStatus);
+            const initials = getInitials(c.name);
+            const ltDisplay = c.todayLastTime ? `Last Time: ${c.todayLastTime}` : 'Last time not entered';
+
+            return `
+<div class="chauffeur-card ${cardClass}" id="card-${c._id}">
+    <div class="card-header">
+        <div class="avatar">${initials}</div>
+        <div>
+            <div class="card-name">${c.name}</div>
+            <div class="card-mobile">${c.mobileNo}</div>
+        </div>
+        ${badge}
+    </div>
+
+    <div class="mtd-section">
+        <div class="mtd-label">Month-to-Date</div>
+        <div class="mtd-rows">
+            <div class="mtd-row">
+                <div class="mtd-row-left"><div class="mtd-dot dot-day"></div>Present – Day</div>
+                <div><span class="mtd-val">${c.mtd.presentDay}</span><span class="mtd-unit">days</span></div>
+            </div>
+            <div class="mtd-row">
+                <div class="mtd-row-left"><div class="mtd-dot dot-night"></div>Present – Night</div>
+                <div><span class="mtd-val">${c.mtd.presentNight}</span><span class="mtd-unit">days</span></div>
+            </div>
+            <div class="mtd-row">
+                <div class="mtd-row-left"><div class="mtd-dot dot-absent"></div>Absent</div>
+                <div><span class="mtd-val">${c.mtd.absent}</span><span class="mtd-unit">days</span></div>
+            </div>
+            <div class="mtd-row">
+                <div class="mtd-row-left"><div class="mtd-dot dot-leave"></div>Leave</div>
+                <div><span class="mtd-val">${c.mtd.leave}</span><span class="mtd-unit">days</span></div>
+            </div>
+            <div class="mtd-row">
+                <div class="mtd-row-left"><div class="mtd-dot dot-ot"></div>Overtime</div>
+                <div>${fmtOT(c.mtd.overtimeMinutes)}</div>
+            </div>
+        </div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:8px;font-style:italic;">Last: ${ltDisplay}</div>
+    </div>
+
+    <div class="card-actions">
+        <button class="btn btn-primary" id="mark-btn-${c._id}" onclick="openMarkModal('${c._id}','${c.name.replace(/'/g,"\\'")}')">Mark Today's</button>
+        <button class="btn btn-ghost" onclick="openLastTimeModal('${c._id}','${c.name.replace(/'/g,"\\'")}')">Enter Last Time</button>
+    </div>
+    <div style="padding:0 18px 14px;">
+        <button style="width:100%;font-size:11.5px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;text-align:center;padding:6px 0;" onclick="openHistory('${c._id}','${c.name.replace(/'/g,"\\'")}')">
+            View History
+        </button>
+    </div>
+</div>`;
+        }).join('');
+    }
+
+    // ─────────────────────────────────────────────
+    // MARK TODAY MODAL
+    // ─────────────────────────────────────────────
+    function openMarkModal(id, name) {
+        activeId = id;
+        activeName = name;
+        document.getElementById('mark-name').textContent = name;
+
+        // Clear previous selection
+        document.querySelectorAll('#status-radios input[type=radio]').forEach(r => r.checked = false);
+        document.querySelectorAll('.radio-label').forEach(l => l.classList.remove('selected'));
+
+        // Pre-select current status if already marked
+        const chauffeur = allData.find(c => c._id === id);
+        if (chauffeur && chauffeur.todayStatus) {
+            const map = {
+                'Present-Day': 'r-day',
+                'Present-Night': 'r-night',
+                'Absent': 'r-absent',
+                'Leave': 'r-leave'
+            };
+            const radioId = map[chauffeur.todayStatus];
+            if (radioId) {
+                const radio = document.getElementById(radioId);
+                radio.checked = true;
+                radio.closest('.radio-label').classList.add('selected');
+            }
+        }
+
+        document.getElementById('mark-modal').classList.add('open');
+    }
+
+    async function submitMarkToday() {
+        const selected = document.querySelector('#status-radios input[type=radio]:checked');
+        if (!selected) { showToast('Please select a status.', 'error'); return; }
+
+        try {
+            const res = await fetch('/api/attendance/mark-today', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chauffeurId: activeId, status: selected.value })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed');
+            showToast(`${activeName} marked as ${selected.value}`, 'success');
+            closeModal('mark-modal');
+            loadAll();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // LAST TIME MODAL
+    // ─────────────────────────────────────────────
+    function openLastTimeModal(id, name) {
+        activeId = id;
+        activeName = name;
+        document.getElementById('lt-name').textContent = name;
+        document.getElementById('lt-time-input').value = '';
+
+        const otBox = document.getElementById('ot-result-box');
+        otBox.textContent = '';
+        otBox.classList.remove('show');
+
+        document.getElementById('lasttime-modal').classList.add('open');
+    }
+
+    async function submitLastTime() {
+        const timeVal = document.getElementById('lt-time-input').value;
+        if (!timeVal) { showToast('Please enter a time.', 'error'); return; }
+
+        try {
+            const res = await fetch('/api/attendance/enter-last-time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chauffeurId: activeId, lastTimeIn: timeVal })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed');
+
+            const otMin = data.overtimeMinutes;
+            const otBox = document.getElementById('ot-result-box');
+            if (otMin > 0) {
+                const h = Math.floor(otMin / 60);
+                const m = otMin % 60;
+                const hDisplay = m > 0 ? `${h}h ${m}m` : `${h}h`;
+                otBox.textContent = `Overtime calculated: ${hDisplay} (${otMin} min)`;
+            } else {
+                otBox.textContent = `No overtime — shift ended within scheduled time.`;
+            }
+            otBox.classList.add('show');
+
+            showToast(`Last time saved for ${activeName}`, 'success');
+            loadAll();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // HISTORY MODAL
+    // ─────────────────────────────────────────────
+    async function openHistory(id, name) {
+        document.getElementById('hist-modal-sub').textContent = `Full attendance log for ${name}`;
+        document.getElementById('hist-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">Loading…</td></tr>';
+        document.getElementById('hist-modal').classList.add('open');
+
+        try {
+            const res = await fetch(`/api/attendance/history/${id}`);
+            const records = await res.json();
+            if (!records.length) {
+                document.getElementById('hist-tbody').innerHTML =
+                    '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No records found.</td></tr>';
+                return;
+            }
+
+            const statusColor = {
+                'Present-Day': '#16a34a',
+                'Present-Night': '#1e40af',
+                'Absent': '#dc2626',
+                'Leave': '#d97706'
+            };
+
+            document.getElementById('hist-tbody').innerHTML = records.map(r => {
+                const color = statusColor[r.status] || '#64748b';
+                const otDisplay = r.overtimeMinutes > 0
+                    ? `<span style="color:#7c3aed;font-weight:700;">${r.overtimeMinutes}</span>`
+                    : `<span style="color:var(--muted);">0</span>`;
+                return `<tr>
+                    <td>${r.date}</td>
+                    <td><span style="color:${color};font-weight:600;">${r.status}</span></td>
+                    <td>${r.lastTimeIn || '—'}</td>
+                    <td>${otDisplay}</td>
+                </tr>`;
+            }).join('');
+        } catch (e) {
+            document.getElementById('hist-tbody').innerHTML =
+                '<tr><td colspan="4" style="text-align:center;padding:20px;color:#dc2626;">Error loading history.</td></tr>';
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    // Close modal on backdrop click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.className = 'toast', 3200);
+    }
+</script>
+
+</body>
+</html>

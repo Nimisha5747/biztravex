@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Core Control & Configuration Registry</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                }
+            }
+        }
+    </script>
+</head>
+
+<nav class="bg-slate-900 text-white shadow-md mb-6">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="font-black tracking-wider text-sm uppercase text-slate-100">BizTravex</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1 sm:gap-3 text-xs font-bold tracking-wide uppercase">
+            <a href="http://localhost:3000" id="nav-home"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                Home Hub
+            </a>
+            <a href="http://localhost:4000/expense.html" id="nav-expense"
+                class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                MIS
+                <a href="http://localhost:4000/expense.html" id="nav-expense"
+                    class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                    Expenses
+                </a>
+                <a href="http://localhost:5000/attendance.html" id="nav-attendance"
+                    class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                    Attendance
+                </a>
+                <a href="http://localhost:6000/billing.html" id="nav-billing"
+                    class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                    Billing
+                </a>
+                <a href="http://localhost:7000/reporting.html" id="nav-reporting"
+                    class="px-3 py-2 rounded-md transition duration-150 hover:bg-slate-800 text-slate-300">
+                    Reports
+                </a>
+                <a href="http://localhost:8000/settings.html" id="nav-settings"
+                    class="px-3 py-2 rounded-md bg-red-600 text-white shadow">
+                    Settings
+                </a>
+        </div>
+    </div>
+</nav>
+
+<body class="bg-gray-100 font-sans p-6 text-gray-800 antialiased">
+
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+        <aside class="space-y-1 bg-white p-4 rounded-xl border shadow-sm h-fit">
+            <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-2">Master Registries Matrix
+            </h3>
+            <button onclick="switchContextActiveTab('zone')" id="btn-zone"
+                class="w-full text-left px-3 py-2 text-xs font-bold rounded-lg bg-blue-50 text-blue-700 transition">📍
+                Zones </button>
+            <button onclick="switchContextActiveTab('chauffeur')" id="btn-chauffeur"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">🕶️
+                Chauffeurs</button>
+            <button onclick="switchContextActiveTab('car')" id="btn-car"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">🚘
+                Cars</button>
+            <button onclick="switchContextActiveTab('user')" id="btn-user"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">👥
+                Employee</button>
+            <button onclick="switchContextActiveTab('client')" id="btn-client"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">🏢
+                Clients </button>
+            <button onclick="switchContextActiveTab('vendor')" id="btn-vendor"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">🚚
+                Vendors </button>
+            <button onclick="switchContextActiveTab('clientrate')" id="btn-clientrate"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">💵
+                Client Rates</button>
+            <button onclick="switchContextActiveTab('statusoption')" id="btn-statusoption"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">📋
+                Status options</button>
+            <button onclick="switchContextActiveTab('updateoption')" id="btn-updateoption"
+                class="w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition">🔄
+                Updates options</button>
+        </aside>
+
+        <main class="md:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6 bg-white p-6 rounded-xl border shadow-sm">
+            <div class="lg:col-span-1 border-r border-gray-100 pr-2">
+                <h2 class="text-sm font-bold text-gray-900 border-b pb-2 uppercase tracking-wide"
+                    id="panel-form-headline">Add Registry Elements</h2>
+                <form id="dynamic-settings-form" class="space-y-3 pt-4 text-xs"
+                    onsubmit="handleFormSubmissionPipeline(event)">
+                    <div id="form-inputs-box" class="space-y-3"></div>
+                    <button type="submit"
+                        class="w-full py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-black transition uppercase tracking-wider text-[11px] shadow-sm">Commit
+                        Document Entry</button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2">
+                <h2 class="text-sm font-bold text-gray-900 border-b pb-2 uppercase tracking-wide">Live Cluster Namespace
+                    Values Readout</h2>
+                <div class="overflow-x-auto pt-4">
+                    <table class="min-w-full text-left text-xs divide-y divide-gray-200">
+                        <thead class="bg-gray-50 font-bold text-gray-500 uppercase tracking-wider border text-[10px]">
+                            <tr id="table-headers-row"></tr>
+                        </thead>
+                        <tbody id="table-body-rows" class="divide-y divide-gray-200 font-medium text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentActiveContextTab = 'zone';
+
+        // Layout schema definition maps for dynamic UI rendering
+        const UIFieldsLayoutDefinitions = {
+            zone: [
+                { name: 'name', label: 'Zone Name', type: 'text', placeholder: 'e.g., Zone 1' },
+                { name: 'minKm', label: 'Minimum Range (KM)', type: 'number', placeholder: 'e.g., 0' },
+                { name: 'maxKm', label: 'Maximum Range (KM)', type: 'number', placeholder: 'e.g., 15' }
+            ],
+            chauffeur: [
+                { name: 'name', label: 'Name', type: 'text', placeholder: 'e.g., John Doe' },
+                { name: 'mobileNo', label: 'Mobile No.', type: 'text', placeholder: 'e.g., +971500000000' }
+            ],
+            car: [
+                { name: 'name', label: 'Type', type: 'text', placeholder: 'e.g., Lexus ES350' },
+                { name: 'number', label: 'Car Number', type: 'text', placeholder: 'e.g., DXB-X-4422' }
+            ],
+            user: [
+                { name: 'name', label: 'Name', type: 'text', placeholder: 'e.g., Sarah Jenkins' },
+                { name: 'mobileNo', label: 'Phone Number', type: 'text', placeholder: 'e.g., +971520000000' },
+                { name: 'email', label: 'Email Address', type: 'email', placeholder: 'name@company.com' },
+                { name: 'role', label: 'Role', type: 'select', options: ['Admin', 'Editor', 'Viewer'] }
+            ],
+            client: [
+                { name: 'name', label: 'Client Name', type: 'text', placeholder: 'e.g., Emirates Holidays' },
+                { name: 'type', label: 'Type', type: 'select', options: ['B2B Corporate', 'B2C Retail VIP', 'Hotel Partnership'] },
+                { name: 'mobileNo', label: 'Phone Number', type: 'text', placeholder: 'e.g., +97140000000' }
+            ],
+            vendor: [
+                { name: 'name', label: 'Vendor Name', type: 'text', placeholder: 'e.g., Apex Rent A Car' },
+                { name: 'type', label: 'Type', type: 'select', options: ['Primary Supplier', 'Secondary Chauffeur Supply', 'Luxury Limousines Depot'] },
+                { name: 'mobileNo', label: 'Phone Number', type: 'text', placeholder: 'e.g., +97149999999' }
+            ],
+            clientrate: [
+                { name: 'clientName', label: 'Client Name', type: 'select', lookupSource: 'client' },
+                { name: 'zoneName', label: 'Zone Name', type: 'select', lookupSource: 'zone' },
+                { name: 'pickupAmount', label: 'Pickup Amount (AED)', type: 'number', placeholder: 'e.g., 180.00' },
+                { name: 'dropAmount', label: 'Drop Amount (AED)', type: 'number', placeholder: 'e.g., 150.00' }
+            ],
+            statusoption: [
+                { name: 'optionValue', label: 'Status Value', type: 'text', placeholder: 'e.g., Flight Delayed' }
+            ],
+            updateoption: [
+                { name: 'optionValue', label: 'Update Value', type: 'text', placeholder: 'e.g., Driver Spotted At Depot' }
+            ]
+        };
+
+        // Handles switching between settings tabs
+        async function switchContextActiveTab(targetTabToken) {
+            currentActiveContextTab = targetTabToken;
+
+            // Toggle active classes on tab controls
+            document.querySelectorAll('aside button').forEach(btn => {
+                btn.className = "w-full text-left px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition";
+            });
+            document.getElementById(`btn-${targetTabToken}`).className = "w-full text-left px-3 py-2 text-xs font-bold rounded-lg bg-blue-50 text-blue-700 transition";
+
+            document.getElementById('panel-form-headline').innerText = `Add ${targetTabToken.toUpperCase()} Record`;
+
+            await compileDynamicFormControlsFields();
+            await reloadDataMatrixReadoutView();
+        }
+
+        // Generates the correct inputs for the selected tab form dynamically
+        async function compileDynamicFormControlsFields() {
+            const container = document.getElementById('form-inputs-box');
+            const layoutFields = UIFieldsLayoutDefinitions[currentActiveContextTab];
+            let builtHtml = '';
+
+            for (const field of layoutFields) {
+                builtHtml += `<div class="flex flex-col gap-1">
+                    <label class="block font-bold text-gray-600 uppercase text-[10px] tracking-wide">${field.label}</label>`;
+
+                if (field.type === 'select') {
+                    let selectOptions = field.options || [];
+
+                    // Cross-reference lookup fetching if field depends on another collection
+                    if (field.lookupSource) {
+                        const res = await fetch(`/api/settings/${field.lookupSource}`);
+                        const lookupItems = await res.json();
+                        selectOptions = lookupItems.map(item => item.name || item.zoneName);
+                    }
+
+                    builtHtml += `<select id="field-${field.name}" required class="w-full border rounded-lg p-2 bg-white focus:outline-blue-500">
+                        ${selectOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                    </select>`;
+                } else {
+                    builtHtml += `<input type="${field.type}" step="0.01" id="field-${field.name}" placeholder="${field.placeholder}" required class="w-full border rounded-lg p-2 focus:outline-blue-500">`;
+                }
+                builtHtml += `</div>`;
+            }
+            container.innerHTML = builtHtml;
+        }
+
+        // Queries the API and builds the database tables view
+        async function reloadDataMatrixReadoutView() {
+            const headerRow = document.getElementById('table-headers-row');
+            const bodyRows = document.getElementById('table-body-rows');
+            const fields = UIFieldsLayoutDefinitions[currentActiveContextTab];
+
+            // Build dynamic table layout columns matching specific schema profiles
+            headerRow.innerHTML = fields.map(f => `<th class="px-4 py-2.5 font-bold">${f.name}</th>`).join('') + `<th class="px-4 py-2.5 text-right">Actions</th>`;
+            bodyRows.innerHTML = `<tr><td colspan="${fields.length + 1}" class="p-4 text-center text-gray-400 italic">Reading indices payload data...</td></tr>`;
+
+            try {
+                const res = await fetch(`/api/settings/${currentActiveContextTab}`);
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    bodyRows.innerHTML = `<tr><td colspan="${fields.length + 1}" class="p-4 text-center text-gray-400 italic">No configuration documents exist in this collection.</td></tr>`;
+                    return;
+                }
+
+                bodyRows.innerHTML = data.map(row => {
+                    let columnsHtml = fields.map(f => `<td class="px-4 py-2 font-medium">${row[f.name] !== undefined ? row[f.name] : '—'}</td>`).join('');
+                    return `<tr class="hover:bg-gray-50 border-b">
+                        ${columnsHtml}
+                        <td class="px-4 py-2 text-right"><button onclick="deleteResourceItem('${row._id}')" class="text-red-500 hover:text-red-700 font-bold hover:underline transition">Delete</button></td>
+                    </tr>`;
+                }).join('');
+            } catch (e) { bodyRows.innerHTML = `<tr><td colspan="${fields.length + 1}" class="p-4 text-center text-red-500 font-bold">Failed to load active data framework records.</td></tr>`; }
+        }
+
+        // Collects form values and pushes them to the database
+        async function handleFormSubmissionPipeline(e) {
+            e.preventDefault();
+            const fields = UIFieldsLayoutDefinitions[currentActiveContextTab];
+            let payload = {};
+
+            fields.forEach(f => {
+                payload[f.name] = document.getElementById(`field-${f.name}`).value;
+            });
+
+            try {
+                const res = await fetch(`/api/settings/${currentActiveContextTab}/new`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    await switchContextActiveTab(currentActiveContextTab); // Refresh form validation grids and data row layouts
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + (err.error || "Submission failed."));
+                }
+            } catch (err) { alert("Failed to log entry transaction. Server might be disconnected."); }
+        }
+
+        // Drops a document element directly out of the target collection
+        async function deleteResourceItem(documentId) {
+            if (!confirm("Are you sure you want to permanently remove this configuration option? This change cannot be undone.")) return;
+            try {
+                const res = await fetch(`/api/settings/${currentActiveContextTab}/${documentId}`, { method: 'DELETE' });
+                if (res.ok) await reloadDataMatrixReadoutView();
+            } catch (e) { alert("Failed to delete element."); }
+        }
+
+        // Initialize display configuration state matrices on viewport ignition bounds
+        window.onload = () => switchContextActiveTab('zone');
+    </script>
+</body>
+
+</html>

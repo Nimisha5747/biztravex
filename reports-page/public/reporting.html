@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizTravex — Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f0f2f7;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --success: #16a34a;
+            --purple: #7c3aed;
+            --warning: #d97706;
+            --r: 10px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* ── PAGE ── */
+        .page {
+            max-width: 1520px;
+            margin: 0 auto;
+            padding: 0 16px 36px;
+        }
+
+        .top-bar {
+            padding: 12px 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-title {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -.2px;
+        }
+
+        .page-sub {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* ── SECTION ── */
+        .sec {
+            margin-bottom: 16px;
+        }
+
+        .sec-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            margin-bottom: 8px;
+        }
+
+        .pip {
+            width: 4px;
+            height: 30px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .pip-a {
+            background: linear-gradient(180deg, #1e40af, #3b82f6);
+        }
+
+        .pip-p {
+            background: linear-gradient(180deg, #065f46, #10b981);
+        }
+
+        .pip-pr {
+            background: linear-gradient(180deg, #6d28d9, #a78bfa);
+        }
+
+        .sec-name {
+            font-size: 14.5px;
+            font-weight: 800;
+        }
+
+        .sec-desc {
+            font-size: 10.5px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        /* ── GRIDS ── */
+        .g5 {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .g4 {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .g6 {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(6, 1fr);
+        }
+
+        .g3 {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .g2 {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .sp2 {
+            grid-column: span 2;
+        }
+
+        .sp3 {
+            grid-column: span 3;
+        }
+
+        @media(max-width:1200px) {
+
+            .g5,
+            .g6 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .g4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:760px) {
+
+            .g5,
+            .g6,
+            .g4,
+            .g3,
+            .g2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:460px) {
+
+            .g5,
+            .g6,
+            .g4,
+            .g3,
+            .g2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── CARD ── */
+        .cc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 10px 12px 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: box-shadow .15s, transform .15s;
+        }
+
+        .cc:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .09);
+            transform: translateY(-1px);
+        }
+
+        .cc-hd {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .cc-title {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .cc-title .tgt {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 12.5px;
+        }
+
+        .cc-sub {
+            font-size: 9px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* ── TOGGLE ── */
+        .tgl {
+            display: flex;
+            background: var(--bg);
+            border-radius: 5px;
+            padding: 1px;
+            gap: 1px;
+            flex-shrink: 0;
+        }
+
+        .tbtn {
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 8.5px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            background: transparent;
+            transition: all .12s;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        .tbtn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+        }
+
+        /* ── CANVAS ── */
+        .cw {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .cw canvas {
+            display: block;
+            width: 100% !important;
+        }
+
+        /* ── GAUGE ── */
+        .gw {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 0;
+        }
+
+        .gw canvas {
+            display: block;
+        }
+
+        .g-val {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .g-lbl {
+            font-size: 9px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        /* ── KPI ROW ── */
+        .krow {
+            display: flex;
+            gap: 6px;
+        }
+
+        .kp {
+            flex: 1;
+            background: var(--bg);
+            border-radius: 7px;
+            padding: 5px 8px;
+            text-align: center;
+        }
+
+        .kv {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .kl {
+            font-size: 8.5px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            margin-top: 1px;
+        }
+
+        .kv.g {
+            color: var(--success);
+        }
+
+        .kv.b {
+            color: var(--primary);
+        }
+
+        .kv.p {
+            color: var(--purple);
+        }
+
+        .kv.a {
+            color: var(--warning);
+        }
+
+        /* ── PROJ INPUTS ── */
+        .pinp {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .ig label {
+            display: block;
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .ig input {
+            width: 100%;
+            padding: 5px 8px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        .ig input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .cbtn {
+            padding: 6px 14px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .cbtn:hover {
+            background: #1d4ed8;
+        }
+
+        /* ── HORIZONTAL STACKED BAR (chauffeur/pud mini) ── */
+        .mini-bar {
+            height: 40px;
+            position: relative;
+        }
+
+        /* ── SECTION DIVIDER ── */
+        .sdiv {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 4px 0 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="bg-slate-900 text-white shadow-md mb-4">
+        <div class="max-w-7xl mx-auto px-5 py-2.5 flex flex-col md:flex-row justify-between items-center gap-3">
+            <span class="font-black tracking-wider text-sm uppercase text-slate-100">BizTravex</span>
+            <div class="flex flex-wrap items-center gap-1 text-xs font-bold tracking-wide uppercase">
+                <a href="http://localhost:3000"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">Home</a>
+                <a href="http://localhost:4000/mis.html"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">MIS</a>
+                <a href="http://localhost:4001/expense.html"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">Expenses</a>
+                <a href="http://localhost:5000/attendance.html"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">Attendance</a>
+                <a href="http://localhost:6000/billing.html"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">Billing</a>
+                <a href="http://localhost:7000/reporting.html"
+                    class="px-2.5 py-1.5 rounded bg-red-600 text-white shadow">Reports</a>
+                <a href="http://localhost:8000/settings.html"
+                    class="px-2.5 py-1.5 rounded hover:bg-slate-800 text-slate-300 transition">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page">
+
+        <div class="top-bar">
+            <div>
+                <div class="page-title">Business Intelligence Reports</div>
+                <div class="page-sub" id="report-date">Loading...</div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECTION 1 — ANALYTICS                     -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="sec">
+            <div class="sec-hd">
+                <div class="pip pip-a"></div>
+                <div>
+                    <div class="sec-name" style="color:#1e40af;">Analytics</div>
+                    <div class="sec-desc">Booking volumes, revenue trends and fleet utilisation</div>
+                </div>
+            </div>
+
+            <div class="g5">
+
+                <!-- Revenue Line — spans 2 -->
+                <div class="cc sp2">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Revenue — Last 5 Months</div>
+                            <div class="cc-sub">Monthly billed (AED)</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-rev-line"></canvas></div>
+                </div>
+
+                <!-- Zone Pie (fetched from DB) -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Zone-wise Bookings</div>
+                            <div class="cc-sub">Pickup zone split</div>
+                        </div>
+                        <div class="tgl" id="tgl-zone">
+                            <button class="tbtn active" onclick="tog('zone','MTD',this)">MTD</button>
+                            <button class="tbtn" onclick="tog('zone','YTD',this)">YTD</button>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-zone"></canvas></div>
+                </div>
+
+                <!-- Bookings Status Pie -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Bookings by Status</div>
+                            <div class="cc-sub">Completed/Cancelled</div>
+                        </div>
+                        <div class="tgl" id="tgl-bk">
+                            <button class="tbtn active" onclick="tog('bk','MTD',this)">MTD</button>
+                            <button class="tbtn" onclick="tog('bk','YTD',this)">YTD</button>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-bk"></canvas></div>
+                </div>
+
+                <!-- Chauffeur Source + PUD stacked in last column -->
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="cc" style="flex:1;">
+                        <div class="cc-hd">
+                            <div>
+                                <div class="cc-title">Chauffeur Source</div>
+                                <div class="cc-sub">Self vs Vendor</div>
+                            </div>
+                        </div>
+                        <div style="height:44px;position:relative;"><canvas id="ch-chauffeur"></canvas></div>
+                    </div>
+                    <div class="cc" style="flex:1;">
+                        <div class="cc-hd">
+                            <div>
+                                <div class="cc-title">Pickup vs Drop</div>
+                                <div class="cc-sub">Service split</div>
+                            </div>
+                            <div class="tgl" id="tgl-pud">
+                                <button class="tbtn active" onclick="tog('pud','MTD',this)">MTD</button>
+                                <button class="tbtn" onclick="tog('pud','YTD',this)">YTD</button>
+                            </div>
+                        </div>
+                        <div style="height:44px;position:relative;"><canvas id="ch-pud"></canvas></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="sdiv"></div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECTION 2 — PROFITABILITY                 -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="sec">
+            <div class="sec-hd">
+                <div class="pip pip-p"></div>
+                <div>
+                    <div class="sec-name" style="color:#065f46;">Profitability</div>
+                    <div class="sec-desc">Revenue, expense and margin by client and vendor</div>
+                </div>
+            </div>
+
+            <div class="g4">
+
+                <!-- Client Revenue Pie (fetched from DB, true pie) -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Client-wise Revenue</div>
+                            <div class="cc-sub">Revenue share (AED)</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-client"></canvas></div>
+                </div>
+
+                <!-- Vendor Expense Pie (fetched from DB, true pie) -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Vendor-wise Expense</div>
+                            <div class="cc-sub">Cost share (AED)</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-vendor"></canvas></div>
+                </div>
+
+                <!-- Margin Bar (clients fetched from DB) -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Revenue vs Cost Margin</div>
+                            <div class="cc-sub">Per client (AED)</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-margin"></canvas></div>
+                </div>
+
+                <!-- Net Profit Pie + KPIs -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Net Profit Breakdown</div>
+                            <div class="cc-sub">Vendor % · Other % · Profit %</div>
+                        </div>
+                    </div>
+                    <div class="krow" style="margin-bottom:4px;">
+                        <div class="kp">
+                            <div class="kv g">AED 42.8k</div>
+                            <div class="kl">Net Profit</div>
+                        </div>
+                        <div class="kp">
+                            <div class="kv b">28.5%</div>
+                            <div class="kl">Margin</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:76px;"><canvas id="ch-netprofit"></canvas></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="sdiv"></div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECTION 3 — PROJECTIONS                   -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="sec">
+            <div class="sec-hd">
+                <div class="pip pip-pr"></div>
+                <div>
+                    <div class="sec-name" style="color:#6d28d9;">Projections</div>
+                    <div class="sec-desc">Forward-looking estimates based on current run-rate</div>
+                </div>
+            </div>
+
+            <div class="g4">
+
+                <!-- Projected Bookings Gauge -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Projected Bookings <span class="tgt">- 220</span></div>
+                            <div class="cc-sub">Month-end estimate</div>
+                        </div>
+                    </div>
+                    <div class="gw">
+                        <canvas id="ch-gbook" width="160" height="84" style="max-width:160px;"></canvas>
+                        <div class="g-val">186</div>
+                        <div class="g-lbl">of 220 target</div>
+                    </div>
+                    <div class="krow">
+                        <div class="kp">
+                            <div class="kv b">104</div>
+                            <div class="kl">MTD Actual</div>
+                        </div>
+                        <div class="kp">
+                            <div class="kv a">82</div>
+                            <div class="kl">Remaining</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projected Billings Gauge -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Projected Billings <span class="tgt">- AED 250k</span></div>
+                            <div class="cc-sub">Expected revenue (AED)</div>
+                        </div>
+                    </div>
+                    <div class="gw">
+                        <canvas id="ch-gbill" width="160" height="84" style="max-width:160px;"></canvas>
+                        <div class="g-val">AED 187k</div>
+                        <div class="g-lbl">of AED 250k target</div>
+                    </div>
+                    <div class="krow">
+                        <div class="kp">
+                            <div class="kv g">AED 98k</div>
+                            <div class="kl">MTD Actual</div>
+                        </div>
+                        <div class="kp">
+                            <div class="kv a">AED 89k</div>
+                            <div class="kl">Remaining</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual vs Projected Bar — actual shown for Week 1 only (today is 5 Jul) -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Actual vs Projected</div>
+                            <div class="cc-sub">Weekly bookings — Jul 2026</div>
+                        </div>
+                    </div>
+                    <div class="cw" style="height:110px;"><canvas id="ch-avp"></canvas></div>
+                    <div class="krow">
+                        <div class="kp">
+                            <div class="kv b">34</div>
+                            <div class="kl">Wk1 Actual</div>
+                        </div>
+                        <div class="kp">
+                            <div class="kv p">28</div>
+                            <div class="kl">Wk1 Projected</div>
+                        </div>
+                        <div class="kp">
+                            <div class="kv g">+6</div>
+                            <div class="kl">Variance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Projection — single target input -->
+                <div class="cc">
+                    <div class="cc-hd">
+                        <div>
+                            <div class="cc-title">Custom Projection</div>
+                            <div class="cc-sub">Set your own monthly target</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:flex-end;">
+                        <div class="ig" style="flex:1;">
+                            <label>Custom Target (AED)</label>
+                            <input type="number" id="ct" placeholder="300000">
+                        </div>
+                        <button class="cbtn" onclick="calcProj()">Go</button>
+                    </div>
+                    <div id="proj-result" style="display:none;">
+                        <div class="gw" style="margin-top:4px;">
+                            <canvas id="ch-custg" width="150" height="80" style="max-width:150px;"></canvas>
+                            <div class="g-val" id="proj-actual">—</div>
+                            <div class="g-lbl">of custom target</div>
+                        </div>
+                        <div class="krow" style="margin-top:4px;">
+                            <div class="kp">
+                                <div class="kv b" id="proj-target">—</div>
+                                <div class="kl">Target</div>
+                            </div>
+                            <div class="kp">
+                                <div class="kv a" id="proj-remaining">—</div>
+                                <div class="kl">Remaining</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.getElementById('report-date').textContent =
+            `${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+        Chart.register(ChartDataLabels);
+        Chart.defaults.font = { family: 'Inter', size: 9 };
+        Chart.defaults.color = '#64748b';
+        // Datalabels are opt-in per chart (only pies + the revenue line show them) so bars/gauges stay clean.
+        Chart.defaults.plugins.datalabels.display = false;
+
+        const BL = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
+        const GR = ['#065f46', '#047857', '#059669', '#10b981', '#34d399'];
+
+        const charts = {};
+
+        // ── DB fetch helpers ──────────────────────────────
+        // Each hits a real API endpoint and falls back to a mock shape if the
+        // backend isn't reachable yet, so this page still renders standalone.
+        async function fetchZones() {
+            try {
+                const res = await fetch('/api/reports/zones');
+                if (!res.ok) throw new Error('bad response');
+                return await res.json(); // { MTD:{l:[],v:[]}, YTD:{l:[],v:[]} }
+            } catch {
+                return {
+                    MTD: { l: ['Zone A', 'Zone B', 'Zone C', 'Zone D'], v: [42, 61, 28, 14] },
+                    YTD: { l: ['Zone A', 'Zone B', 'Zone C', 'Zone D'], v: [318, 487, 214, 92] }
+                };
+            }
+        }
+
+        async function fetchClientRevenue() {
+            try {
+                const res = await fetch('/api/reports/clients/revenue');
+                if (!res.ok) throw new Error('bad response');
+                return await res.json(); // { labels:[], values:[] }
+            } catch {
+                return {
+                    labels: ['Emirates Tours', 'Rotana Hotels', 'Al Habtoor', 'Luxury Escapes', 'Thriwex', 'Others'],
+                    values: [42800, 31200, 28700, 22400, 18900, 13600]
+                };
+            }
+        }
+
+        async function fetchVendorExpense() {
+            try {
+                const res = await fetch('/api/reports/vendors/expense');
+                if (!res.ok) throw new Error('bad response');
+                return await res.json(); // { labels:[], values:[] }
+            } catch {
+                return {
+                    labels: ['Al Futtaim', 'Careem Biz', 'Global Limo', 'Swift Rides', 'Others'],
+                    values: [21400, 18600, 14200, 11800, 8900]
+                };
+            }
+        }
+
+        async function fetchClientMargin() {
+            try {
+                const res = await fetch('/api/reports/clients/margin');
+                if (!res.ok) throw new Error('bad response');
+                return await res.json(); // { labels:[], revenue:[], vendorCost:[], netMargin:[] }
+            } catch {
+                return {
+                    labels: ['Emirates', 'Rotana', 'Al Habtoor', 'Lux Esc.', 'Thriwex'],
+                    revenue: [42800, 31200, 28700, 22400, 18900],
+                    vendorCost: [14980, 10920, 10045, 7840, 6615],
+                    netMargin: [27820, 20280, 18655, 14560, 12285]
+                };
+            }
+        }
+
+        // ── Toggle data (zone comes from DB, pud limited to Pickup/Drop only) ──
+        const D = {
+            zone: null, // populated by fetchZones() in build()
+            bk: {
+                MTD: { l: ['Completed', 'Upcoming', 'In Progress', 'Cancelled'], v: [78, 22, 5, 12] },
+                YTD: { l: ['Completed', 'Upcoming', 'In Progress', 'Cancelled'], v: [619, 142, 0, 97] }
+            },
+            pud: {
+                MTD: { l: ['Pickup', 'Drop'], v: [54, 61] },
+                YTD: { l: ['Pickup', 'Drop'], v: [418, 503] }
+            }
+        };
+
+        function tog(key, period, btn) {
+            btn.closest('.tgl').querySelectorAll('.tbtn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const d = D[key][period];
+            if (key === 'zone') { charts.zone.data.labels = d.l; charts.zone.data.datasets[0].data = d.v; charts.zone.update(); }
+            if (key === 'bk') { charts.bk.data.labels = d.l; charts.bk.data.datasets[0].data = d.v; charts.bk.update(); }
+            if (key === 'pud') {
+                charts.pud.data.datasets.forEach((ds, i) => { ds.data = [d.v[i]]; ds.label = d.l[i]; });
+                charts.pud.update();
+            }
+        }
+
+        // ── Shared options factories ──────────────────────
+        // Pies show value + percent directly on the slice (no hover needed).
+        function pie(pos = 'right') {
+            return {
+                responsive: true, maintainAspectRatio: false, cutout: '58%',
+                plugins: {
+                    legend: { position: pos, labels: { boxWidth: 7, font: { size: 8.5, weight: '600' }, padding: 5 } },
+                    tooltip: {
+                        callbacks: {
+                            label: c => {
+                                const t = c.dataset.data.reduce((a, b) => a + b, 0);
+                                return ` ${c.label}: ${c.parsed.toLocaleString()} (${((c.parsed / t) * 100).toFixed(1)}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#fff',
+                        font: { size: 7.5, weight: '700', lineHeight: 1.1 },
+                        textAlign: 'center',
+                        formatter: (value, ctx) => {
+                            const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const pct = total ? ((value / total) * 100).toFixed(0) : 0;
+                            return [value.toLocaleString(), pct + '%'];
+                        }
+                    }
+                }
+            };
+        }
+
+        // True pie (no donut hole) for client/vendor — same size & legend position as the other pies.
+        function truePie(pos = 'right') {
+            const opts = pie(pos);
+            opts.cutout = 0;
+            return opts;
+        }
+
+        function bar(xLabel) {
+            return {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 7, font: { size: 8.5 }, padding: 5 } },
+                    tooltip: { callbacks: { label: c => ` AED ${c.parsed.y.toLocaleString()}` } }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 8 } } },
+                    y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => (v / 1000).toFixed(0) + 'k', font: { size: 8 } } }
+                }
+            };
+        }
+
+        function hbar() {
+            return {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { boxWidth: 7, font: { size: 8.5 }, padding: 4 } }, tooltip: { enabled: true } },
+                scales: { x: { stacked: true, display: false }, y: { stacked: true, display: false } }
+            };
+        }
+
+        function gauge(value, max, color) {
+            const remaining = Math.max(max - value, 0);
+            return {
+                type: 'doughnut',
+                // No filler slice: colored + gray together fill the entire 180° semicircle,
+                // so the semicircle itself represents the full target (max) and the colored
+                // arc is the portion of it achieved so far.
+                data: { datasets: [{ data: [value, remaining], backgroundColor: [color, '#e8ecf2'], borderWidth: 0, circumference: 180, rotation: 270 }] },
+                options: { responsive: false, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } }, animation: { duration: 900 } }
+            };
+        }
+
+        // ── Build all ─────────────────────────────────────
+        async function build() {
+
+            /* 1. Revenue line — value shown on each point, no hover needed */
+            const rCtx = document.getElementById('ch-rev-line').getContext('2d');
+            const rG = rCtx.createLinearGradient(0, 0, 0, 110);
+            rG.addColorStop(0, 'rgba(37,99,235,0.25)');
+            rG.addColorStop(1, 'rgba(37,99,235,0)');
+            charts.revLine = new Chart(rCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Revenue (AED)', data: [112400, 128700, 141200, 138900, 157800],
+                        borderColor: '#2563eb', backgroundColor: rG, fill: true,
+                        tension: 0.4, borderWidth: 2, pointRadius: 3, pointHoverRadius: 4.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: c => ` AED ${c.parsed.y.toLocaleString()}` } },
+                        datalabels: {
+                            display: true, align: 'top', anchor: 'end',
+                            color: '#1e40af', font: { size: 10, weight: '700' },
+                            formatter: v => (v / 1000).toFixed(0) + 'k'
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 9, weight: '600' } } },
+                        y: { grid: { color: '#f1f5f9' }, ticks: { callback: v => (v / 1000).toFixed(0) + 'k', font: { size: 8 } } }
+                    }
+                }
+            });
+
+            /* 2. Zone pie — data fetched from the database */
+            const zoneData = await fetchZones();
+            D.zone = zoneData;
+            charts.zone = new Chart(document.getElementById('ch-zone'), {
+                type: 'doughnut',
+                data: { labels: D.zone.MTD.l, datasets: [{ data: D.zone.MTD.v, backgroundColor: BL, borderWidth: 1.5, borderColor: '#fff' }] },
+                options: pie('right')
+            });
+
+            /* 3. Bookings status pie */
+            charts.bk = new Chart(document.getElementById('ch-bk'), {
+                type: 'doughnut',
+                data: { labels: D.bk.MTD.l, datasets: [{ data: D.bk.MTD.v, backgroundColor: ['#10b981', '#2563eb', '#8b5cf6', '#ef4444'], borderWidth: 1.5, borderColor: '#fff' }] },
+                options: pie('right')
+            });
+
+            /* 4. Chauffeur source - horizontal stacked (Self vs Vendor) */
+            charts.chauffeur = new Chart(document.getElementById('ch-chauffeur'), {
+                type: 'bar',
+                data: {
+                    labels: [''],
+                    datasets: [
+                        { label: 'Self', data: [38], backgroundColor: '#2563eb', borderRadius: 3 },
+                        { label: 'Vendor', data: [62], backgroundColor: '#10b981', borderRadius: 3 }
+                    ]
+                },
+                options: hbar()
+            });
+
+            /* 5. Pickup vs Drop - horizontal stacked, only 2 service types */
+            charts.pud = new Chart(document.getElementById('ch-pud'), {
+                type: 'bar',
+                data: {
+                    labels: [''],
+                    datasets: D.pud.MTD.l.map((l, i) => ({
+                        label: l, data: [D.pud.MTD.v[i]],
+                        backgroundColor: ['#2563eb', '#f59e0b'][i], borderRadius: 3
+                    }))
+                },
+                options: hbar()
+            });
+
+            /* 6. Client revenue — true pie, data fetched from the database */
+            const clientRev = await fetchClientRevenue();
+            charts.client = new Chart(document.getElementById('ch-client'), {
+                type: 'pie',
+                data: { labels: clientRev.labels, datasets: [{ data: clientRev.values, backgroundColor: BL, borderWidth: 1.5, borderColor: '#fff' }] },
+                options: truePie('right')
+            });
+
+            /* 7. Vendor expense — true pie, data fetched from the database */
+            const vendorExp = await fetchVendorExpense();
+            charts.vendor = new Chart(document.getElementById('ch-vendor'), {
+                type: 'pie',
+                data: { labels: vendorExp.labels, datasets: [{ data: vendorExp.values, backgroundColor: GR, borderWidth: 1.5, borderColor: '#fff' }] },
+                options: truePie('right')
+            });
+
+            /* 8. Margin bar — clients fetched from the database */
+            const marginData = await fetchClientMargin();
+            charts.margin = new Chart(document.getElementById('ch-margin'), {
+                type: 'bar',
+                data: {
+                    labels: marginData.labels,
+                    datasets: [
+                        { label: 'Revenue', data: marginData.revenue, backgroundColor: '#2563eb', borderRadius: 4 },
+                        { label: 'Vendor Cost', data: marginData.vendorCost, backgroundColor: '#10b981', borderRadius: 4 },
+                        { label: 'Net Margin', data: marginData.netMargin, backgroundColor: '#8b5cf6', borderRadius: 4 }
+                    ]
+                },
+                options: bar()
+            });
+
+            /* 9. Net profit pie — shows just the percent split */
+            const netProfitOpts = pie('right');
+            netProfitOpts.plugins.datalabels.formatter = v => v + '%';
+            charts.netprofit = new Chart(document.getElementById('ch-netprofit'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Vendor Exp', 'Other Exp', 'Net Profit'],
+                    datasets: [{ data: [49.8, 21.7, 28.5], backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 1.5, borderColor: '#fff' }]
+                },
+                options: netProfitOpts
+            });
+
+            /* 10. Projected Bookings Gauge — 186 of 220 (target shown in title as #220) */
+            charts.gbook = new Chart(document.getElementById('ch-gbook'), gauge(186, 220, '#2563eb'));
+
+            /* 11. Projected Billings Gauge — 187k of 250k (target shown in title as #AED 250k) */
+            charts.gbill = new Chart(document.getElementById('ch-gbill'), gauge(187000, 250000, '#10b981'));
+
+            /* 12. Actual vs Projected bar — today is 5 Jul, so only Week 1 has an actual value */
+            charts.avp = new Chart(document.getElementById('ch-avp'), {
+                type: 'bar',
+                data: {
+                    labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+                    datasets: [
+                        { label: 'Actual', data: [34, null, null, null], backgroundColor: '#2563eb', borderRadius: 4 },
+                        { label: 'Projected', data: [28, 28, 28, 30], backgroundColor: 'rgba(139,92,246,0.3)', borderColor: '#8b5cf6', borderWidth: 1, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 7, font: { size: 8.5 }, padding: 5 } } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 8 } }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // ── Custom Projection — single target input compared against MTD actual billing ──
+        const MTD_ACTUAL_BILLING = 98000; // same run-rate figure used in the Projected Billings gauge above
+        let custG = null;
+        function calcProj() {
+            const target = parseFloat(document.getElementById('ct').value) || 0;
+            if (!target) return;
+
+            const remaining = Math.max(target - MTD_ACTUAL_BILLING, 0);
+
+            document.getElementById('proj-actual').textContent = 'AED ' + (MTD_ACTUAL_BILLING / 1000).toFixed(1) + 'k';
+            document.getElementById('proj-target').textContent = 'AED ' + (target / 1000).toFixed(1) + 'k';
+            document.getElementById('proj-remaining').textContent = 'AED ' + (remaining / 1000).toFixed(1) + 'k';
+            document.getElementById('proj-result').style.display = 'block';
+
+            if (custG) custG.destroy();
+            const achieved = pct => pct >= 1 ? '#10b981' : '#2563eb';
+            custG = new Chart(document.getElementById('ch-custg'), {
+                type: 'doughnut',
+                // Same full-semicircle approach: actual + remaining fill the whole 180°,
+                // so the semicircle is the target and the colored arc is progress toward it.
+                data: {
+                    datasets: [{
+                        data: [MTD_ACTUAL_BILLING, remaining],
+                        backgroundColor: [achieved(MTD_ACTUAL_BILLING / target), '#e8ecf2'],
+                        borderWidth: 0, circumference: 180, rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: false, maintainAspectRatio: false, cutout: '72%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } }
+                }
+            });
+        }
+
+        build();
+    </script>
+</body>
+
+</html>

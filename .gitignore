@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+*/node_modules/
+
+*.log
+npm-debug.log*
+
+home-page/tmp-uploads/
