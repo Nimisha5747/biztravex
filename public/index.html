@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizTravex CRM Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .expand-panel {
+            display: none;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 0 0 12px 12px;
+            animation: slideDown .2s ease-out;
+        }
+
+        .expand-panel.open {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-cell .label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #475569;
+        }
+
+        .info-cell .val {
+            font-size: 11px;
+            font-weight: 500;
+            color: #0f172a;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+
+        .upd-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .upd-input {
+            width: 100%;
+            padding: 9px 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0f172a;
+            background: #ffffff;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .upd-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .log-entry {
+            border-left: 2px solid #cbd5e1;
+            padding-left: 12px;
+            margin-left: 4px;
+        }
+
+        .badge-upcoming {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .badge-inprogress {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="text-[13px] leading-relaxed bg-[#f7f2e9] min-h-screen font-sans text-stone-800">
+
+    <nav class="bg-[rgb(6,45,94)] text-white shadow-xl shadow-blue-900/20 border-b border-blue-900">
+        <div class="max-w-[1600px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <img src="biztravex logo.png" alt="BizTravex Logo" class="w-8 h-8 rounded object-cover shadow-sm">
+                <span class="font-extrabold tracking-tight text-lg text-white">BizTravex</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openZoneModal()"
+                    class="text-xs font-semibold text-blue-100 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition">Manage
+                    Zones</button>
+                <button onclick="logout()"
+                    class="text-xs font-semibold text-blue-100 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-[1600px] mx-auto px-5 py-6 space-y-5">
+
+        <!-- Page Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight text-blue-950">Booking Management</h1>
+                <p class="text-xs text-blue-900/60 mt-1 font-medium">Manage your flight bookings</p>
+            </div>
+            <button onclick="openManualModal()"
+                class="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                Add Manual Booking
+            </button>
+        </header>
+
+        <!-- Top Tools Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            <!-- Data Import -->
+            <section
+                class="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-bold text-blue-900 mb-3 border-b-2 border-blue-100 pb-2 inline-block">Data
+                        Import</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-blue-800 mb-1.5 uppercase tracking-wide">Client
+                                Dump</label>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="upload-dump" accept=".xlsx,.xls"
+                                    class="block w-full text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                                <button onclick="processUpload('dump')"
+                                    class="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 hover:text-indigo-800 transition-colors shrink-0 shadow-sm">Import</button>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-stone-100">
+                            <label
+                                class="block text-xs font-semibold text-blue-800 mb-1.5 uppercase tracking-wide">Vendor
+                                File</label>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="upload-vendor" accept=".xlsx,.xls"
+                                    class="block w-full text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                                <button onclick="processUpload('vendor')"
+                                    class="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 hover:text-indigo-800 transition-colors shrink-0 shadow-sm">Import</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search & Filters -->
+            <section
+                class="lg:col-span-2 bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-bold text-blue-900 mb-3 border-b-2 border-blue-100 pb-2 inline-block">Search
+                        & Filters</h2>
+                    <div class="flex flex-wrap items-center gap-4 mb-4 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
+                            <input type="checkbox" value="bookingId" onchange="toggleFilterInputVisibility(this)"
+                                class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
+                            Booking ID
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
+                            <input type="checkbox" value="pickUpDate" onchange="toggleFilterInputVisibility(this)"
+                                class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
+                            Date
+                        </label>
+                    </div>
+                    <div id="active-inputs-bar" class="hidden">
+                        <div id="inputs-container" class="flex flex-wrap items-end gap-4"></div>
+                        <div class="mt-4 pt-4 border-t border-stone-100">
+                            <button onclick="executeFilteredSearchPipeline()"
+                                class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                    <div id="no-filters-msg" class="text-xs text-stone-400 italic">Select filters above to begin
+                        searching.</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Bookings List -->
+        <main class="space-y-4">
+            <div id="widget-list-container" class="space-y-3">
+                <div
+                    class="bg-white p-6 text-center text-xs text-stone-400 border border-stone-200 rounded-xl shadow-sm">
+                    Select parameters or import spreadsheets to view bookings.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MANUAL BOOKING MODAL -->
+    <div id="manual-modal"
+        class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-5 border-b border-stone-100 flex justify-between items-center bg-white">
+                <h2 class="text-base font-bold text-stone-900">Add Manual Booking</h2>
+                <button onclick="closeManualModal()"
+                    class="text-stone-400 hover:text-stone-700 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 text-xs space-y-5 custom-scrollbar">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div><label
+                            class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Booking
+                            ID</label><input type="text" id="m-id" placeholder="BIZ-2025-XXXX"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-stone-50">
+                    </div>
+                    <div><label
+                            class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Pick-Up
+                            Date</label><input type="date" id="m-date"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label
+                            class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Pick-Up
+                            Time</label><input type="time" id="m-time"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Client
+                            Name</label><input type="text" id="m-client" placeholder="e.g. Emirates Tours"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label
+                            class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Customer
+                            Name</label><input type="text" id="m-passenger" placeholder="Passenger name"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Mobile
+                            Number</label><input type="text" id="m-mobile" placeholder="+971..."
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Flight
+                            Number</label><input type="text" id="m-flight" placeholder="e.g. EK203"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Vendor
+                            Name</label><input type="text" id="m-vendor" placeholder="e.g. Al Futtaim Limo"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">No.
+                            of Passengers</label><input type="number" id="m-pax" min="1" placeholder="1"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">No.
+                            of Infants</label><input type="number" id="m-infants" min="0" placeholder="0"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">No.
+                            of Babies</label><input type="number" id="m-babies" min="0" placeholder="0"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">No.
+                            of Luggages</label><input type="number" id="m-luggage" min="0" placeholder="0"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Pickup
+                            Address</label><input type="text" id="m-pickup" placeholder="Full pickup address"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Drop
+                            Address</label><input type="text" id="m-drop" placeholder="Full drop address"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Car
+                            Type</label><input type="text" id="m-car" placeholder="e.g. Lexus ES350"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-stone-50 border-t border-stone-100 flex justify-end gap-3 shrink-0">
+                <button onclick="closeManualModal()"
+                    class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-medium text-stone-700 bg-white hover:bg-stone-50 transition">Cancel</button>
+                <button onclick="saveManualBooking()"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition">Save
+                    Booking</button>
+            </div>
+        </div>
+    </div>
+    <!-- ZONE MANAGEMENT MODAL -->
+    <div id="zone-modal"
+        class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-5 border-b border-stone-100 flex justify-between items-center bg-white">
+                <h2 class="text-base font-bold text-stone-900">Manage Zones</h2>
+                <button onclick="closeZoneModal()"
+                    class="text-stone-400 hover:text-stone-700 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 text-xs space-y-5 custom-scrollbar">
+                <div class="bg-stone-50 rounded-xl border border-stone-200 p-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-3">Add New Zone</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label
+                                class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Name</label>
+                            <input type="text" id="z-name" placeholder="Zone A"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Min
+                                Km</label>
+                            <input type="number" id="z-min" placeholder="0" min="0"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Max
+                                Km</label>
+                            <input type="number" id="z-max" placeholder="15" min="0"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button onclick="addZone()"
+                            class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                            Add Zone
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-3">Existing Zones</h3>
+                    <div id="zone-list" class="space-y-2">
+                        <p class="text-stone-400 italic text-center py-6 text-xs">Loading zones...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Auth Guard ──────────────────────────────────────────────────────────
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login.html';
+        }
+
+        function authHeaders(extra = {}) {
+            return { ...extra, 'Authorization': `Bearer ${authToken}` };
+        }
+
+        async function logout() {
+            try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (e) { }
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+        }
+
+        async function authFetch(url, options = {}) {
+            const res = await fetch(url, { ...options, headers: authHeaders(options.headers || {}) });
+            if (res.status === 401) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login.html';
+                throw new Error('Session expired');
+            }
+            return res;
+        }
+
+        let liveLoadedWidgetsDataset = [];
+        let currentOpenIndex = null;
+        let filterClickOrder = [];
+        let isInitialRestore = false;
+
+        const UPDATABLE_FIELDS = [
+            { value: 'status', label: 'Status' },
+            { value: 'chauffeurName', label: 'Chauffeur Name' },
+            { value: 'chauffeurPhone', label: 'Chauffeur Phone' },
+            { value: 'carNumber', label: 'Car Plate Number' },
+            { value: 'vendorName', label: 'Vendor Name' },
+            { value: 'pickUpDate', label: 'Pickup Date' },
+            { value: 'pickUpTime', label: 'Pickup Time' },
+            { value: 'pickupAddress', label: 'Pickup Address' },
+            { value: 'dropAddress', label: 'Drop Address' },
+            { value: 'flightNumber', label: 'Flight Number' },
+            { value: 'carType', label: 'Car Type' },
+            { value: 'serviceType', label: 'Service Type' },
+            { value: 'noOfPassengers', label: 'No. of Passengers' },
+            { value: 'noOfInfants', label: 'No. of Infants' },
+            { value: 'noOfBaby', label: 'No. of Babies' },
+            { value: 'noOfLuggages', label: 'No. of Luggages' },
+            { value: 'amountAED', label: 'Amount (AED)' },
+            { value: 'customerName', label: 'Customer Name' },
+            { value: 'customerMobile', label: 'Customer Mobile' },
+            { value: 'startKm', label: 'Start Km.' },
+            { value: 'endKm', label: 'End Km.' }
+        ];
+
+        function persistFilterState() {
+            let filterValues = {};
+            filterClickOrder.forEach(key => {
+                const inputEl = document.getElementById(`param-${key}`);
+                if (inputEl) filterValues[key] = inputEl.value;
+            });
+            sessionStorage.setItem('activeFilterKeys', JSON.stringify(filterClickOrder));
+            sessionStorage.setItem('savedBookingFilters', JSON.stringify(filterValues));
+        }
+
+        function toggleFilterInputVisibility(checkbox) {
+            const container = document.getElementById('inputs-container');
+            const targetFieldId = `filter-input-wrap-${checkbox.value}`;
+            if (checkbox.checked) {
+                // NEW: track click order
+                if (!filterClickOrder.includes(checkbox.value)) filterClickOrder.push(checkbox.value);
+
+                const wrap = document.createElement('div');
+                wrap.id = targetFieldId;
+                wrap.className = 'flex flex-col text-xs w-48';
+                let labelText = checkbox.parentElement.innerText.trim();
+                let inputHtml = checkbox.value === 'pickUpDate'
+                    ? `<input type="date" id="param-${checkbox.value}" value="${new Date().toISOString().split('T')[0]}" class="border border-stone-300 rounded-lg px-3 py-2 mt-1.5 text-xs focus:outline-none focus:border-blue-500">`
+                    : `<input type="text" id="param-${checkbox.value}" placeholder="Enter ${labelText}..." class="border border-stone-300 rounded-lg px-3 py-2 mt-1.5 text-xs focus:outline-none focus:border-blue-500">`;
+                wrap.innerHTML = `<label class="font-semibold text-stone-500 text-xs uppercase tracking-wide">${labelText}</label>${inputHtml}`;
+                container.appendChild(wrap);
+
+                const newInput = document.getElementById(`param-${checkbox.value}`);
+                if (newInput) newInput.addEventListener('input', persistFilterState);
+            } else {
+                // NEW: remove from click order
+                filterClickOrder = filterClickOrder.filter(k => k !== checkbox.value);
+
+                const el = document.getElementById(targetFieldId);
+                if (el) el.remove();
+            }
+            const hasInputs = container.children.length > 0;
+            document.getElementById('active-inputs-bar').classList.toggle('hidden', !hasInputs);
+            document.getElementById('no-filters-msg').classList.toggle('hidden', hasInputs);
+
+            persistFilterState();
+        }
+
+        async function executeFilteredSearchPipeline() {
+            const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            let searchPayload = {};
+            checkedBoxes.forEach(box => {
+                const inputEl = document.getElementById(`param-${box.value}`);
+                if (inputEl && inputEl.value) searchPayload[box.value] = inputEl.value;
+            });
+            persistFilterState(); // was: sessionStorage.setItem('savedBookingFilters', JSON.stringify(searchPayload))
+            try {
+                const res = await authFetch('/api/bookings/filter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filters: searchPayload })
+                });
+                liveLoadedWidgetsDataset = await res.json();
+                currentOpenIndex = null;
+                renderWidgets();
+            } catch (e) { alert('Failed to fetch filtered data.'); }
+        }
+
+        function renderWidgets() {
+            const container = document.getElementById('widget-list-container');
+            if (liveLoadedWidgetsDataset.length === 0) {
+                container.innerHTML = `<div class="bg-white p-6 text-center text-xs text-stone-400 border border-stone-200 rounded-xl shadow-sm">No records found for the selected filters.</div>`;
+                return;
+            }
+
+            const fieldOptions = UPDATABLE_FIELDS.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
+
+            container.innerHTML = liveLoadedWidgetsDataset.map((row, idx) => {
+                const statusClass =
+                    row.status === 'Ride In Progress' ? 'badge-inprogress' :
+                        row.status === 'Completed' ? 'badge-completed' :
+                            row.status === 'Cancelled' ? 'badge-cancelled' : 'badge-upcoming';
+
+                const hiddenFields = ['_id', '__v', 'createdAt', 'updatedAt', 'uploadedAt', 'updates', 'startKm', 'remarks', 'pickUpZipcode', 'pickUpRegion', 'pickUpCountry', 'endKm', 'dropRegion', 'dropCountry', 'dropZipcode', 'distanceTravelledByCar', 'customerMobile', 'bookingId', 'chauffeurName', 'customerName', 'flightNumber', 'pickUpDate', 'pickUpTime', 'status'];
+                const infoCells = Object.keys(row)
+                    .filter(k => !hiddenFields.includes(k))
+                    .map(k => {
+                        let v = row[k];
+                        if (v === undefined || v === null || v === '') v = '—';
+                        if (typeof v === 'object') v = JSON.stringify(v);
+                        const niceLabel = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+                        return `<div class="info-cell bg-white rounded-lg p-3 border border-stone-100 shadow-sm">
+                            <div class="label">${niceLabel}</div>
+                            <div class="val">${v}</div>
+                        </div>`;
+                    }).join('');
+
+                return `
+                <div class="rounded-xl overflow-hidden border border-stone-200 shadow-sm bg-white" id="row-wrap-${idx}">
+                    <div class="px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-colors hover:bg-stone-50 cursor-pointer" id="row-header-${idx}" onclick="toggleExpand(${idx})">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-5 flex-1 text-xs">
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Booking ID</p>
+                                <p class="font-mono font-bold text-stone-900 text-xs">${row.bookingId || '—'}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Date &amp; Time</p>
+                                <p class="text-stone-800 font-medium text-xs">${row.pickUpDate || '—'} <span class="text-stone-500 font-normal ml-1">${row.pickUpTime || ''}</span></p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Client</p>
+                                <p class="text-stone-800 font-medium text-xs">${row.clientName || '—'}</p>
+                            </div>
+                            <div>
+                                <div>
+                                    <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Flight Number</p>
+                                    <p class="text-stone-800 font-medium text-xs">${row.flightNumber || '—'}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Status</p>
+                                <span class="inline-block mt-0.5 px-2.5 py-1 text-[10px] font-semibold rounded-md ${statusClass}">${row.status || 'Upcoming'}</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Chauffeur</p>
+                                <p class="text-stone-800 font-medium text-xs">${row.chauffeurName || '—'}</p>
+                            </div>
+                        </div>
+                        <button id="expand-btn-${idx}" class="text-blue-600 hover:text-indigo-800 text-xs font-medium whitespace-nowrap">
+                            View Details
+                        </button>
+                    </div>
+
+                    <div class="expand-panel" id="expand-panel-${idx}">
+                        <div class="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <div class="xl:col-span-2 space-y-6">
+                                <div>
+                                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-4">Booking Information</h3>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        ${infoCells}
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+                                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-5">Update Field</h3>
+                                    <div class="space-y-4">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                                            <div>
+                                                <label class="upd-label">Select Attribute</label>
+                                                <select id="upd-field-${idx}" class="upd-input text-stone-400" onchange="this.classList.toggle('text-stone-400', this.value === ''); this.classList.toggle('text-stone-800', this.value !== '')">
+                                                    <option value="" class="text-stone-400">Choose field</option>
+                                                    ${fieldOptions.replace(/<option value="([^"]*)">/g, '<option value="$1" class="text-stone-800">')}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="upd-label">New Value</label>
+                                                <input type="text" id="upd-value-${idx}" placeholder="Enter new value" class="upd-input">
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end pt-2">
+                                            <button onclick="submitFieldUpdate(${idx}, '${row._id}', '${row.bookingId}')" class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                                                Save Update
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+                                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-5">Remarks</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="upd-label">Remark</label>
+                                            <input type="text" id="remark-value-${idx}" placeholder="Enter remark" value="${row.remarks && row.remarks !== '—' ? row.remarks : ''}" class="upd-input" autocomplete="off">
+                                        </div>
+                                        <div class="flex justify-end pt-2">
+                                            <button onclick="submitRemarkUpdate(${idx}, '${row._id}', '${row.bookingId}')" class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                                                Save Remark
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-stone-50 rounded-xl border border-stone-200 p-5 flex flex-col">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-4 border-b border-stone-200 pb-3">Audit Trail</h3>
+                                <div id="audit-log-${idx}" class="space-y-4 flex-1 overflow-y-auto pr-2 text-xs custom-scrollbar max-h-96">
+                                    <p class="text-stone-400 italic text-center py-6 text-xs">Loading audit logs...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if (isInitialRestore) {
+                const savedBookingId = sessionStorage.getItem('openedBookingId');
+                if (savedBookingId) {
+                    const foundIdx = liveLoadedWidgetsDataset.findIndex(r => r.bookingId === savedBookingId);
+                    if (foundIdx !== -1) {
+                        setTimeout(() => toggleExpand(foundIdx), 50);
+                    }
+                }
+                isInitialRestore = false; // consume the flag so it doesn't fire again
+            }
+        }
+
+        async function toggleExpand(idx) {
+            const panel = document.getElementById(`expand-panel-${idx}`);
+            const btn = document.getElementById(`expand-btn-${idx}`);
+
+            if (currentOpenIndex === idx) {
+                panel.classList.remove('open');
+                btn.textContent = 'View Details';
+                currentOpenIndex = null;
+                sessionStorage.removeItem('openedBookingId'); // <--- ADDED
+            } else {
+                if (currentOpenIndex !== null) {
+                    const oldPanel = document.getElementById(`expand-panel-${currentOpenIndex}`);
+                    const oldBtn = document.getElementById(`expand-btn-${currentOpenIndex}`);
+                    if (oldPanel) oldPanel.classList.remove('open');
+                    if (oldBtn) oldBtn.textContent = 'View Details';
+                }
+                panel.classList.add('open');
+                btn.textContent = 'Close Details';
+                currentOpenIndex = idx;
+
+                // <--- ADDED: Save the specific booking ID so it survives refresh
+                sessionStorage.setItem('openedBookingId', liveLoadedWidgetsDataset[idx].bookingId);
+
+                await loadAuditLog(idx, liveLoadedWidgetsDataset[idx].bookingId);
+            }
+        }
+
+
+        async function loadAuditLog(idx, bookingId) {
+            const container = document.getElementById(`audit-log-${idx}`);
+            container.innerHTML = '<p class="text-stone-400 italic text-center py-6">Querying history...</p>';
+            try {
+                const res = await authFetch(`/api/bookings/logs/${bookingId}`);
+                const history = await res.json();
+                if (history.length === 0) {
+                    container.innerHTML = '<p class="text-stone-400 italic text-center py-6">No audit records found.</p>';
+                    return;
+                }
+                container.innerHTML = history.map(log => {
+                    const ts = new Date(log.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const changes = Object.keys(log.changesMade || {}).map(field => `
+                        <div class="mt-2 pl-3 log-entry text-xs">
+                            <span class="font-mono text-slate-700 font-semibold">${field}:</span>
+                            <span class="text-stone-400 line-through mx-1">${log.changesMade[field].old}</span>
+                            <span class="text-stone-300 mx-1">→</span>
+                            <span class="text-stone-800 font-medium">${log.changesMade[field].new}</span>
+                        </div>`).join('');
+                    const remarkTxt = log.description || log.remarks || '';
+                    return `
+                        <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm space-y-1.5">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs text-slate-600 font-medium">${ts}</span>
+                                <span class="bg-stone-100 px-2 py-1 rounded text-[10px] font-semibold text-slate-600">${log.updatedBy || log.author || 'System'}</span>
+                            </div>
+                            <p class="font-semibold text-stone-800 text-xs">${log.action || 'Update'}</p>
+                            ${remarkTxt ? `<p class="text-xs text-stone-500">${remarkTxt}</p>` : ''}
+                            ${changes}
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-500 italic text-center py-6">Failed to load audit data.</p>';
+            }
+        }
+
+        async function submitFieldUpdate(idx, docId, bookingId) {
+            const field = document.getElementById(`upd-field-${idx}`).value;
+            const value = document.getElementById(`upd-value-${idx}`).value.trim();
+
+            if (!field) return alert('Please select an attribute to update.');
+            if (!value) return alert('Please enter a new value.');
+
+            try {
+                const res = await authFetch('/api/bookings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: docId, field: field, newValue: value })
+                });
+
+                if (res.ok) {
+                    document.getElementById(`upd-field-${idx}`).value = '';
+                    document.getElementById(`upd-value-${idx}`).value = '';
+
+                    const doc = liveLoadedWidgetsDataset[idx];
+                    doc[field] = value;
+                    liveLoadedWidgetsDataset[idx] = doc;
+                    await loadAuditLog(idx, bookingId);
+
+                    const btn = document.querySelector(`#expand-panel-${idx} button[onclick^="submitFieldUpdate"]`);
+                    const orig = btn.textContent;
+                    btn.textContent = 'Saved';
+                    btn.classList.replace('bg-stone-900', 'bg-emerald-600');
+                    setTimeout(() => { btn.textContent = orig; btn.classList.replace('bg-emerald-600', 'bg-stone-900'); }, 2000);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Update failed: ' + (err.message || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Network error. Could not save update.');
+            }
+        }
+
+        async function submitRemarkUpdate(idx, docId, bookingId) {
+            const input = document.getElementById(`remark-value-${idx}`);
+            const value = input.value.trim();
+
+            try {
+                const res = await authFetch('/api/bookings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: docId, field: 'remarks', newValue: value || '—' })
+                });
+
+                if (res.ok) {
+                    const doc = liveLoadedWidgetsDataset[idx];
+                    doc.remarks = value || '—';
+                    liveLoadedWidgetsDataset[idx] = doc;
+                    await loadAuditLog(idx, bookingId);
+
+                    const btn = document.querySelector(`#expand-panel-${idx} button[onclick^="submitRemarkUpdate"]`);
+                    const orig = btn.textContent;
+                    btn.textContent = 'Saved';
+                    btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+                    setTimeout(() => { btn.textContent = orig; btn.classList.replace('bg-emerald-600', 'bg-blue-600'); }, 2000);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Failed to save remark: ' + (err.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Network error. Could not save remark.');
+            }
+        }
+
+        async function processUpload(type) {
+            const input = document.getElementById(`upload-${type}`);
+            if (input.files.length === 0) return alert('Select a spreadsheet file first.');
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            const endpoint = type === 'dump' ? '/api/bookings/upload-dump' : '/api/bookings/upload-vendor';
+            try {
+                const response = await authFetch(endpoint, { method: 'POST', body: formData });
+                if (response.ok) {
+                    const res = await response.json();
+                    alert(res.message);
+                    input.value = '';
+                    if (liveLoadedWidgetsDataset.length > 0) executeFilteredSearchPipeline();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert('Upload failed: ' + (err.error || 'Unknown error'));
+                }
+            } catch (e) { alert('File processing failed.'); }
+        }
+
+        function openManualModal() {
+            document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+        function closeManualModal() {
+            document.getElementById('manual-modal').classList.add('hidden');
+        }
+
+        // ── Zone Management ─────────────────────────────────────────────────
+        function openZoneModal() {
+            document.getElementById('zone-modal').classList.remove('hidden');
+            loadZones();
+        }
+        function closeZoneModal() {
+            document.getElementById('zone-modal').classList.add('hidden');
+        }
+
+        async function loadZones() {
+            const listEl = document.getElementById('zone-list');
+            listEl.innerHTML = '<p class="text-stone-400 italic text-center py-6 text-xs">Loading zones...</p>';
+            try {
+                const res = await authFetch('/api/zones');
+                const zones = await res.json();
+                renderZoneList(zones);
+            } catch (e) {
+                listEl.innerHTML = '<p class="text-red-500 italic text-center py-6 text-xs">Failed to load zones.</p>';
+            }
+        }
+
+        function renderZoneList(zones) {
+            const listEl = document.getElementById('zone-list');
+            if (!zones || zones.length === 0) {
+                listEl.innerHTML = '<p class="text-stone-400 italic text-center py-6 text-xs">No zones defined yet.</p>';
+                return;
+            }
+            listEl.innerHTML = zones.map(z => `
+                <div class="flex items-center justify-between bg-white border border-stone-200 rounded-lg px-4 py-2.5 shadow-sm">
+                    <div>
+                        <p class="font-bold text-stone-900 text-xs">${z.name}</p>
+                        <p class="text-stone-500 text-[11px] mt-0.5">${z.minKm} km &ndash; ${z.maxKm} km</p>
+                    </div>
+                    <button onclick="deleteZone('${z._id}')"
+                        class="text-red-600 hover:text-red-800 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition">
+                        Delete
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function addZone() {
+            const name = document.getElementById('z-name').value.trim();
+            const minKm = document.getElementById('z-min').value;
+            const maxKm = document.getElementById('z-max').value;
+
+            if (!name) return alert('Please enter a zone name.');
+            if (minKm === '' || maxKm === '') return alert('Please enter both min and max km.');
+
+            try {
+                const res = await authFetch('/api/zones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, minKm, maxKm })
+                });
+                if (res.ok) {
+                    document.getElementById('z-name').value = '';
+                    document.getElementById('z-min').value = '';
+                    document.getElementById('z-max').value = '';
+                    loadZones();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Failed to add zone: ' + (err.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Network error. Could not add zone.');
+            }
+        }
+
+        async function deleteZone(id) {
+            if (!confirm('Delete this zone?')) return;
+            try {
+                const res = await authFetch(`/api/zones/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadZones();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Failed to delete zone: ' + (err.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Network error. Could not delete zone.');
+            }
+        }
+
+        async function saveManualBooking() {
+            const payload = {
+                bookingId: document.getElementById('m-id').value,
+                pickUpDate: document.getElementById('m-date').value,
+                pickUpTime: document.getElementById('m-time').value,
+                clientName: document.getElementById('m-client').value,
+                customerName: document.getElementById('m-passenger').value,
+                customerMobile: document.getElementById('m-mobile').value,
+                flightNumber: document.getElementById('m-flight').value,
+                vendorName: document.getElementById('m-vendor').value,
+                noOfPassengers: document.getElementById('m-pax').value,
+                noOfInfants: document.getElementById('m-infants').value,
+                noOfBaby: document.getElementById('m-babies').value,
+                noOfLuggages: document.getElementById('m-luggage').value,
+                pickupAddress: document.getElementById('m-pickup').value,
+                dropAddress: document.getElementById('m-drop').value,
+                carType: document.getElementById('m-car').value
+            };
+            try {
+                const res = await authFetch('/api/bookings/manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('Booking created successfully.');
+                    closeManualModal();
+                    document.querySelectorAll('#manual-modal input:not([type="date"])').forEach(i => i.value = '');
+                    if (liveLoadedWidgetsDataset.length > 0) executeFilteredSearchPipeline();
+                } else { alert('Failed to create booking.'); }
+            } catch (err) { alert('Network error. Could not create booking.'); }
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+            const savedKeysJSON = sessionStorage.getItem('activeFilterKeys');
+            const savedValuesJSON = sessionStorage.getItem('savedBookingFilters');
+            const activeKeys = savedKeysJSON ? JSON.parse(savedKeysJSON) : [];
+            const savedValues = savedValuesJSON ? JSON.parse(savedValuesJSON) : {};
+
+            let hasActiveFilters = false;
+
+            activeKeys.forEach(key => {
+                const checkbox = document.querySelector(`input[type="checkbox"][value="${key}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    toggleFilterInputVisibility(checkbox); // creates the input + re-persists
+
+                    const inputEl = document.getElementById(`param-${key}`);
+                    if (inputEl && savedValues[key] !== undefined) {
+                        inputEl.value = savedValues[key];
+                        if (savedValues[key]) hasActiveFilters = true;
+                    }
+                }
+            });
+
+            if (hasActiveFilters) {
+                isInitialRestore = true;   // NEW: mark this as the refresh-restore call
+                executeFilteredSearchPipeline();
+            }
+        });
+    </script>
+</body>
+
+</html>
