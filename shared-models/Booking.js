@@ -12,7 +12,7 @@ const BookingSchema = new mongoose.Schema({
     dropAddress: String,
     serviceType: { type: String, default: "" },
     zone: String,
-    status: { type: String, default: "Upcoming" },
+    status: { type: String, default: "—" },
     // updates: { type: String, default: "" },
     remarks: { type: String, default: "" },
     chargeable: { type: String, default: "" },

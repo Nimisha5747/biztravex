@@ -162,7 +162,7 @@ app.post('/api/bookings/manual', requireAuth, async (req, res) => {
             dropAddress: dropAddress || '—',
             serviceType: getServiceType(pickupAddress, dropAddress),
             carType: carType || '—',
-            status: 'Upcoming',
+            status: '—',
             bookingSource: 'Manual Entry',
             chauffeurName: '—',
             chauffeurPhone: '—'
@@ -174,7 +174,7 @@ app.post('/api/bookings/manual', requireAuth, async (req, res) => {
             bookingId: newDoc.bookingId,
             updatedBy: req.user.name || req.user.email,
             action: "Manual Booking Created",
-            changesMade: { status: { old: "—", new: "Upcoming" } }
+            changesMade: { status: { old: "—", new: "—" } }
         }).save();
 
         res.json({ success: true, doc: newDoc });

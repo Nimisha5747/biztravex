@@ -112,6 +112,11 @@
             color: #991b1b;
         }
 
+        .badge-notset {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
         }
@@ -506,7 +511,8 @@
                 const statusClass =
                     row.status === 'Ride In Progress' ? 'badge-inprogress' :
                         row.status === 'Completed' ? 'badge-completed' :
-                            row.status === 'Cancelled' ? 'badge-cancelled' : 'badge-upcoming';
+                            row.status === 'Cancelled' ? 'badge-cancelled' :
+                                row.status === 'Upcoming' ? 'badge-upcoming' : 'badge-notset';
 
                 const hiddenFields = ['_id', '__v', 'createdAt', 'updatedAt', 'uploadedAt', 'updates', 'startKm', 'remarks', 'pickUpZipcode', 'pickUpRegion', 'pickUpCountry', 'endKm', 'dropRegion', 'dropCountry', 'dropZipcode', 'distanceTravelledByCar', 'customerMobile', 'bookingId', 'chauffeurName', 'customerName', 'flightNumber', 'pickUpDate', 'pickUpTime', 'status'];
                 const infoCells = Object.keys(row)
@@ -546,7 +552,7 @@
                             </div>
                             <div>
                                 <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Status</p>
-                                <span class="inline-block mt-0.5 px-2.5 py-1 text-[10px] font-semibold rounded-md ${statusClass}">${row.status || 'Upcoming'}</span>
+                                <span class="inline-block mt-0.5 px-2.5 py-1 text-[10px] font-semibold rounded-md ${statusClass}">${row.status && row.status !== '—' ? row.status : 'Not Set'}</span>
                             </div>
                             <div>
                                 <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wide mb-0.5">Chauffeur</p>
