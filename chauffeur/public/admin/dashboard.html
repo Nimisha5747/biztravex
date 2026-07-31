@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BizTravex Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="sidebar-brand">BizTravex Admin</div>
+    <div class="sidebar-nav">
+      <button class="sidebar-link active" data-section="chauffeursSection" onclick="switchSection('chauffeursSection', this)">👤 Manage Chauffeurs</button>
+      <button class="sidebar-link" data-section="bookingsSection" onclick="switchSection('bookingsSection', this)">📋 Chauffeurs &amp; Bookings</button>
+      <button class="sidebar-link" data-section="attendanceSection" onclick="switchSection('attendanceSection', this)">🗓️ Attendance</button>
+      <button class="sidebar-link" data-section="adminsSection" onclick="switchSection('adminsSection', this)">🔑 Admin Users</button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="handleAdminLogout()">Log Out</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="page-title" id="pageTitle">Manage Chauffeurs</div>
+      <div class="admin-name-chip" id="adminNameChip"></div>
+    </div>
+
+    <!-- ===================== MANAGE CHAUFFEURS ===================== -->
+    <section id="chauffeursSection" class="admin-view-panel active">
+      <div class="panel-card">
+        <div class="form-row">
+          <input type="text" id="newChauffeurName" placeholder="Full name">
+          <input type="tel" id="newChauffeurNumber" placeholder="Mobile number">
+          <button class="btn btn-primary" onclick="addChauffeur()">Add Chauffeur</button>
+        </div>
+        <div id="chauffeurListContainer">
+          <p class="empty-text">Loading chauffeurs...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CHAUFFEURS & BOOKINGS ===================== -->
+    <section id="bookingsSection" class="admin-view-panel">
+      <div class="panel-card" style="margin-bottom: 18px;">
+        <div class="form-row">
+          <select id="bookingsChauffeurSelect" style="flex:1; padding:10px 14px; border:1.5px solid var(--border); border-radius:9px; font-size:14px;">
+            <option value="">Select a chauffeur...</option>
+          </select>
+          <input type="date" id="bookingsDateInput">
+          <button class="btn btn-primary" onclick="loadBookingWidgets()">Load Bookings</button>
+        </div>
+      </div>
+
+      <div class="panel-card" style="margin-bottom: 18px;">
+        <div id="bookingWidgetsContainer">
+          <p class="empty-text">Select a chauffeur and date to see their bookings.</p>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div style="font-weight:800; font-size:16px; margin-bottom:14px;">Responses</div>
+        <div id="responseDetailContainer">
+          <p class="empty-text">Click a booking above to view its response.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ATTENDANCE (placeholder for Phase 4) ===================== -->
+    <section id="attendanceSection" class="admin-view-panel">
+      <div class="panel-card">
+        <p class="empty-text">Coming in a later phase.</p>
+      </div>
+    </section>
+
+    <!-- ===================== ADMIN USERS (placeholder for Phase 5) ===================== -->
+    <section id="adminsSection" class="admin-view-panel">
+      <div class="panel-card">
+        <p class="empty-text">Coming in a later phase.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

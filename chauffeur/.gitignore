@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Environment Variables (Secrets)
+.env
+.env.local
+
+# Server & IDE logs
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Vercel folder
+.vercel/

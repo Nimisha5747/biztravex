@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BizTravex Chauffeur App</title>
+  <meta name="description"
+    content="Mobile-first Chauffeur Portal for Punch In pre-Ride checklists and Punch Out ride completion reports.">
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Ambient background glow -->
+  <div class="ambient-bg"></div>
+
+  <!-- Mobile App Frame Container -->
+  <div class="mobile-container">
+    <!-- App Status Bar / Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="headerBackBtn" class="back-nav-btn display-none" onclick="navigateBack()" title="Go Back">
+          <span>← Back</span>
+        </button>
+        <div class="brand">
+          <img src="biztravex logo.png" alt="biztravex-logo" class="brand-logo">
+          <span class="brand-name">BizTravex</span>
+        </div>
+      </div>
+      <div class="chauffeur-profile-chip" id="profileChip" style="display:none;">
+        <span class="online-indicator"></span>
+        <span class="profile-name" id="headerChauffeurName">Chauffeur</span>
+        <button id="headerEndShiftBtn" class="logout-btn" onclick="handleEndShift()" title="End Shift" disabled>End
+          Shift</button>
+      </div>
+    </header>
+
+    <!-- App Body Content -->
+    <div class="app-content">
+
+      <!-- ===================== VIEW 1: SIGN IN ===================== -->
+      <section id="authView" class="view-panel">
+        <div class="panel-header text-center">
+          <div class="app-avatar">🚗</div>
+          <h1>Chauffeur Log In</h1>
+          <p class="subtitle">Enter your registered details to access your daily shift dashboard.</p>
+        </div>
+
+        <form id="loginForm" onsubmit="event.preventDefault(); submitLogin();">
+          <div class="form-group">
+            <label for="loginName">Your Name</label>
+            <input type="text" id="loginName" placeholder="Enter full name..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="loginNumber">Mobile Number</label>
+            <input type="tel" id="loginNumber" placeholder="Enter 9-digit mobile number..." required>
+          </div>
+
+
+
+          <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block" onclick="submitLogin()">Log
+            In</button>
+        </form>
+        <div class="auth-footer text-center">
+          <span>First time using the portal?</span>
+          <button class="btn-link" onclick="showRegisterView()">Create an Account</button>
+        </div>
+      </section>
+
+      <!-- ===================== VIEW 2: CREATE AN ACCOUNT ===================== -->
+      <section id="registerView" class="view-panel">
+        <div class="panel-header text-center">
+          <div class="app-avatar">📝</div>
+          <h1>Create an Account</h1>
+          <p class="subtitle">Register your details into the database for shift authentication.</p>
+        </div>
+
+        <form id="registerForm" onsubmit="event.preventDefault(); submitRegister();">
+          <div class="form-group">
+            <label for="regName">Full Name</label>
+            <input type="text" id="regName" placeholder="Enter full name..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="regNumber">Mobile Number</label>
+            <input type="tel" id="regNumber" placeholder="Enter 10-digit mobile number..." required>
+          </div>
+
+          <button type="submit" id="btnRegisterSubmit" class="btn btn-primary btn-block">Create Account</button>
+          <button type="button" class="btn btn-ghost btn-block margin-top-lg" onclick="showAuthView()">← Back to Log
+            In</button>
+        </form>
+      </section>
+
+      <!-- ===================== VIEW 3: MAIN DASHBOARD (PUNCH IN / PUNCH OUT) ===================== -->
+      <section id="dashboardView" class="view-panel">
+        <div class="welcome-card">
+          <span class="welcome-tag">Today's Shift</span>
+          <h2 id="dashChauffeurName">Welcome!</h2>
+          <p id="dashShiftInfo" class="dash-shift">Ready to start shift ?</p>
+        </div>
+
+        <div id="startShiftRow" class="shift-actions-row">
+          <button id="btnStartShift" class="btn btn-start" onclick="handleStartShift()">Start Shift</button>
+        </div>
+
+        <div id="readinessActionContainer" class="action-card-grid display-none" style="margin-bottom: 20px;">
+          <button class="action-card" style="border-color: #f59e0b;" onclick="openReadinessChecklist()">
+            <div class="action-icon">📋</div>
+            <div class="action-details">
+              <strong style="color: #d97706;">Vehicle Readiness</strong>
+              <span>Complete checklist to start shift</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+        </div>
+        <div id="dashboardActions" class="action-card-grid display-none">
+          <button class="action-card action-punch-in" onclick="openPunchIn()">
+            <div class="action-icon">🟢</div>
+            <div class="action-details">
+              <strong>Punch In</strong>
+              <span>Select 1 Booking ID & complete pre-ride checklist</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+
+          <button class="action-card action-punch-out" onclick="openPunchOut()">
+            <div class="action-icon">🔴</div>
+            <div class="action-details">
+              <strong>Punch Out</strong>
+              <span>Select pending Booking IDs & fill ride report</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+
+          <button class="action-card" onclick="openSubmitPhotos()">
+            <div class="action-icon">📸</div>
+            <div class="action-details">
+              <strong>Submit Photos</strong>
+              <span>Parking, Pickup & Drop odometer photos</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+        </div>
+
+        <!-- TEMPORARY LOGOUT BUTTON -->
+        <div style="margin-top: 30px; text-align: center;">
+          <button class="btn btn-ghost" style="color: #ef4444;" onclick="handleLogout()">Log Out (Temp)</button>
+        </div>
+      </section>
+
+      <!-- ===================== VIEW 4: PUNCH IN (RADIO BUTTONS + PRE-RIDE) ===================== -->
+      <section id="punchInView" class="view-panel">
+        <div class="panel-header">
+          <h2>🟢 Punch In – Pre-Ride</h2>
+          <p class="subtitle">Select your target Booking ID and complete safety checklist.</p>
+        </div>
+
+        <form id="punchInForm" onsubmit="event.preventDefault(); submitPunchIn();">
+          <!-- Booking Radio Buttons Section -->
+          <div class="form-section">
+            <label class="section-label">Select Booking ID: </label>
+            <div id="punchInBookingsRadioList" class="radio-card-list">
+              <p class="placeholder-text">Loading assigned bookings...</p>
+            </div>
+          </div>
+
+          <!-- Pre-Ride Checklist Section -->
+          <div id="preShiftFormSection" class="form-section display-none">
+            <label class="section-label">2. Pre-Ride Vehicle Checklist:</label>
+
+            <div class="form-group">
+              <label for="carCleaned">Have you cleaned the car?</label>
+              <select id="carCleaned" required>
+                <option value="">-- Choose --</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="phoneCharged">Is your phone charged enough?</label>
+              <select id="phoneCharged" required>
+                <option value="">-- Choose --</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="enoughPetrol">Is there enough petrol in the car for today?</label>
+              <select id="enoughPetrol" required>
+                <option value="">-- Choose --</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div class="form-actions-stack">
+              <button type="submit" id="btnPunchInSubmit" class="btn btn-primary btn-block">Confirm Punch In</button>
+              <button type="button" class="btn btn-ghost btn-block" onclick="backFromPunchForm()">← Back to
+                Dashboard</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===================== VIEW 5: PUNCH OUT (CHECKBOXES + RIDE REPORTS) ===================== -->
+      <section id="punchOutView" class="view-panel">
+        <div class="panel-header">
+          <h2>🔴 Punch Out – Ride Report</h2>
+          <p class="subtitle">Select pending Booking IDs to submit ride completion reports.</p>
+        </div>
+
+        <form id="punchOutForm" onsubmit="event.preventDefault(); submitPunchOut();">
+          <!-- Pending Booking Checkboxes Section -->
+          <div class="form-section">
+            <label class="section-label">Select Booking ID:</label>
+            <div id="pendingBookingsCheckboxList" class="checkbox-card-list">
+              <p class="placeholder-text">Checking pending bookings...</p>
+            </div>
+          </div>
+
+          <!-- Dynamic Ride Completion Reports Container -->
+          <div id="dynamicRideReportsContainer" class="form-section"></div>
+
+          <div id="punchOutActions" class="form-actions-stack display-none">
+            <button type="submit" id="btnPunchOutSubmit" class="btn btn-primary btn-block">Submit Punch Out
+              Report</button>
+            <button type="button" class="btn btn-ghost btn-block" onclick="backFromPunchForm()">← Back to
+              Dashboard</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===================== VIEW X: VEHICLE READINESS CHECKLIST ===================== -->
+      <section id="readinessWidgetView" class="view-panel">
+        <div class="panel-header">
+          <h2>🚘 Vehicle Readiness</h2>
+          <p class="subtitle">Please complete this checklist before starting your shift.</p>
+        </div>
+
+        <form id="readinessForm" onsubmit="event.preventDefault(); submitVehicleReadiness();">
+          <div class="form-group">
+            <label>Is vehicle clean?</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Exterior clean"> Exterior
+                clean</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Interior clean"> Interior
+                clean</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Windows"> Windows</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Floor mats"> Floor mats</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Boot"> Boot</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrClean" value="Dashboard"> Dashboard</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Are amenities ready?</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-label"><input type="checkbox" name="vrAmenities" value="Water bottle"> Water
+                bottle</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrAmenities" value="Tissue box"> Tissue
+                box</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrAmenities" value="Charging cable"> Charging
+                cable</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Are you ready?</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-label"><input type="checkbox" name="vrReady" value="Formal attire"> Formal
+                attire</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrReady" value="Fuel"> Fuel</label>
+              <label class="checkbox-label"><input type="checkbox" name="vrReady" value="Warning lights"> Warning
+                lights</label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:20px;">
+            <label>Vehicle Photos (cleaned car — capture as many as needed)</label>
+            <input type="file" id="readinessImage" accept="image/*" capture="environment"
+              style="display: none;" onchange="handleReadinessPhotoCapture(event)" />
+            <label for="readinessImage" class="btn btn-block"
+              style="background: #10b981; color: white; border: none; padding: 15px; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+              <span id="readinessPhotoBtnText">📷 Click Photo</span>
+            </label>
+            <p id="readinessPhotoStatusText" class="subtitle"
+              style="margin-top: 15px; color: #ef4444; font-weight: 500;">No photo captured yet</p>
+            <div id="readinessPhotoThumbList" class="photo-thumb-list"></div>
+          </div>
+
+          <button type="submit" id="btnReadinessSubmit" class="btn btn-primary btn-block margin-top-lg"
+            disabled>Done</button>
+          <button type="button" class="btn btn-ghost btn-block margin-top-lg"
+            onclick="showDashboardView()">Cancel</button>
+        </form>
+      </section>
+
+      <!-- ===================== END SHIFT PHOTO SCREEN ===================== -->
+      <section id="endShiftView" class="view-panel text-center">
+        <div class="panel-header">
+          <p class="subtitle">Please capture a photo of the odometer to end your shift.</p>
+        </div>
+        <form id="endShiftForm" onsubmit="event.preventDefault(); submitEndShift();">
+          <div class="form-group" style="margin-top:20px;">
+            <!-- Hidden file input -->
+            <input type="file" id="endShiftImage" accept="image/*" capture="environment" required style="display: none;"
+              onchange="updatePhotoStatus()" />
+
+            <!-- Custom Button overlay -->
+            <label for="endShiftImage" class="btn btn-block"
+              style="background: #10b981; color: white; border: none; padding: 15px; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+              <span id="endShiftPhotoBtnText">📷 Click Photo</span>
+            </label>
+            <p id="photoStatusText" class="subtitle" style="margin-top: 15px; color: #ef4444; font-weight: 500;">No
+              photo captured yet</p>
+          </div>
+          <button type="submit" id="btnEndShiftSubmit" class="btn btn-primary btn-block margin-top-lg" disabled>Submit &
+            End Shift</button>
+          <button type="button" class="btn btn-ghost btn-block margin-top-lg"
+            onclick="showDashboardView()">Cancel</button>
+        </form>
+      </section>
+
+      <!-- ===================== SUBMIT PHOTOS: BOOKING SELECT ===================== -->
+      <section id="submitPhotosBookingSelectView" class="view-panel">
+        <div class="panel-header">
+          <h2>📸 Submit Photos</h2>
+          <p class="subtitle">Select the Booking ID you want to submit trip photos for.</p>
+        </div>
+
+        <div class="form-section">
+          <label class="section-label">Select Booking ID:</label>
+          <div id="submitPhotosBookingRadioList" class="radio-card-list">
+            <p class="placeholder-text">Loading assigned bookings...</p>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-ghost btn-block margin-top-lg" onclick="showDashboardView()">← Back to
+          Dashboard</button>
+      </section>
+
+      <!-- ===================== SUBMIT PHOTOS: MENU (3 options, direct camera) ===================== -->
+      <section id="submitPhotosMenuView" class="view-panel">
+        <div class="panel-header">
+          <h2>📸 Submit Photos</h2>
+          <p class="subtitle">Booking ID: <strong id="submitPhotosSelectedBookingLabel"></strong></p>
+        </div>
+
+        <div class="action-card-grid">
+          <button class="action-card" onclick="triggerTripPhotoCapture('parking')">
+            <div class="action-icon">🅿️</div>
+            <div class="action-details">
+              <strong>Start from Parking</strong>
+              <span>Capture photo at parking start</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+
+          <button class="action-card" onclick="triggerTripPhotoCapture('pickup')">
+            <div class="action-icon">📍</div>
+            <div class="action-details">
+              <strong>Pickup Image</strong>
+              <span>Capture photo at pickup</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+
+          <button class="action-card" onclick="triggerTripPhotoCapture('drop')">
+            <div class="action-icon">🏁</div>
+            <div class="action-details">
+              <strong>Drop Image</strong>
+              <span>Capture photo at drop</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+        </div>
+
+        <!-- Hidden file inputs — one per photo type, so tapping a widget opens the camera directly -->
+        <input type="file" id="tripPhotoInputParking" accept="image/*" capture="environment"
+          style="display:none;" onchange="handleTripPhotoSelected(event, 'parking')">
+        <input type="file" id="tripPhotoInputPickup" accept="image/*" capture="environment"
+          style="display:none;" onchange="handleTripPhotoSelected(event, 'pickup')">
+        <input type="file" id="tripPhotoInputDrop" accept="image/*" capture="environment"
+          style="display:none;" onchange="handleTripPhotoSelected(event, 'drop')">
+
+        <div id="tripPhotoToast" class="toast-message display-none">✅ Photo successfully captured!</div>
+
+        <button type="button" class="btn btn-ghost btn-block margin-top-lg" onclick="openSubmitPhotos()">← Back to
+          Booking Selection</button>
+      </section>
+
+      <!-- ===================== PENDING FORMS VIEW ===================== -->
+      <section id="pendingFormsView" class="view-panel">
+        <div class="panel-header">
+          <h2>⚠️ Pending Forms</h2>
+          <p class="subtitle">You missed filling out these forms during your shift.</p>
+        </div>
+
+        <div class="action-card-grid">
+          <button id="btnPendingPunchIn" class="action-card action-punch-in" onclick="openPunchIn('PENDING')">
+            <div class="action-icon">🟢</div>
+            <div class="action-details">
+              <strong>Pending Punch In</strong>
+              <span id="pendingPunchInCount">0 missed</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+
+          <button id="btnPendingPunchOut" class="action-card action-punch-out" onclick="openPunchOut('PENDING')">
+            <div class="action-icon">🔴</div>
+            <div class="action-details">
+              <strong>Pending Punch Out</strong>
+              <span id="pendingPunchOutCount">0 missed</span>
+            </div>
+            <span class="action-arrow">❯</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================== CONFIRMATION SCREEN ===================== -->
+      <section id="confirmView" class="view-panel text-center">
+        <div class="success-badge">🎉</div>
+        <h2 id="confirmTitle">Submitted Successfully!</h2>
+        <p id="confirmMessage" class="subtitle">Your entry has been successfully recorded.</p>
+        <button class="btn btn-primary btn-block margin-top-lg" onclick="showDashboardView()">Back to Dashboard</button>
+      </section>
+
+    </div>
+
+    <!-- Floating Pending Forms Widget -->
+    <div id="pendingFormsWidget" class="floating-widget display-none" onclick="showPendingFormsView()">
+      <div class="widget-icon">⚠️</div>
+      <div class="widget-text">Pending Forms (<span id="pendingWidgetCount">0</span>)</div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div id="customConfirmOverlay" class="custom-confirm-overlay display-none">
+      <div class="custom-confirm-box">
+        <p id="customConfirmMessage">Are you sure?</p>
+        <div class="custom-confirm-actions">
+          <button id="customConfirmCancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+          <button id="customConfirmOkBtn" class="btn btn-primary" type="button">Yes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
