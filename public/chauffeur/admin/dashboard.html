@@ -19,6 +19,7 @@
       <button class="sidebar-link" data-section="adminsSection" onclick="switchSection('adminsSection', this)">🔑 Admin Users</button>
     </div>
     <div class="sidebar-footer">
+      <button class="btn-back-crm" onclick="window.location.href='/index.html'">Back to CRM</button>
       <button class="btn-logout" onclick="handleAdminLogout()">Log Out</button>
     </div>
   </div>
@@ -136,29 +137,6 @@
       </div>
   </div>
   
-  <!-- ENTER LAST TIME MODAL -->
-  <div class="modal-overlay" id="lasttime-modal">
-      <div class="modal">
-          <div class="modal-title">Enter Last Time</div>
-          <div class="modal-sub">
-              Enter the actual clock-out / end time for <strong id="lt-name"></strong>.
-              <br><span style="color:#dc2626;font-weight:600;">Attendance must be marked first.</span>
-          </div>
-  
-          <div class="modal-field">
-              <label class="modal-label" for="lt-time-input">Actual End Time (HH:MM)</label>
-              <input type="time" class="modal-input" id="lt-time-input" required>
-          </div>
-  
-          <div class="ot-result" id="ot-result-box"></div>
-  
-          <div class="modal-actions" style="margin-top:18px;">
-              <button class="btn-modal-cancel" onclick="closeModal('lasttime-modal')">Cancel</button>
-              <button class="btn-modal-confirm" onclick="submitLastTime()">Save</button>
-          </div>
-      </div>
-  </div>
-  
   <!-- HISTORY MODAL -->
   <div class="modal-overlay" id="hist-modal">
       <div class="modal hist-modal">
@@ -173,7 +151,6 @@
                       <tr>
                           <th>Date</th>
                           <th>Status</th>
-                          <th>Last Time</th>
                           <th>OT (min)</th>
                       </tr>
                   </thead>
@@ -185,6 +162,23 @@
 
   <div class="toast" id="toast"></div>
 
+  <script>
+    (function() {
+        const originalFetch = window.fetch;
+        window.fetch = function (url, options = {}) {
+            options.headers = options.headers || {};
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (options.headers instanceof Headers) {
+                options.headers.set('x-timezone', tz);
+            } else if (Array.isArray(options.headers)) {
+                options.headers.push(['x-timezone', tz]);
+            } else {
+                options.headers['x-timezone'] = tz;
+            }
+            return originalFetch(url, options);
+        };
+    })();
+  </script>
   <script src="admin.js"></script>
 </body>
 </html>

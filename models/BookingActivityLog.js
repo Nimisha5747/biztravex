@@ -6,6 +6,7 @@ const ActivityLogSchema = new mongoose.Schema({
     updatedBy:   { type: String, required: true },
     action:      { type: String, required: true },
     description: { type: String, default: '' },   // Remarks / reason for change
+    reason:      { type: String, default: '' },   // Dispatcher specified reason
     changesMade: { type: Object, default: {} }     // Stores exact before/after field value maps
 });
 

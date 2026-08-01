@@ -13,20 +13,19 @@ const { JWT_SECRET } = require('../middleware/auth');
 const {
   parseRowDateTime,
   IST_OFFSET_MS,
-  getCalendarDateFromLogInTime,
   driveLinkToImageUrl
 } = require('../utils/sheetsHelpers');
 
 const router = express.Router();
 
 // Master-sheet column indices
-const MS_BOOKING_ID = 1;      // B
-const MS_CUSTOMER_NAME = 2;   // C
-const MS_PICKUP_ADDRESS = 8;  // I
-const MS_DROP_ADDRESS = 9;    // J
-const MS_NAME = 11;           // L
-const MS_DATE = 16;           // Q
-const MS_PICKUP_TIME = 17;    // R
+// const MS_BOOKING_ID = 1;      // B
+// const MS_CUSTOMER_NAME = 2;   // C
+// const MS_PICKUP_ADDRESS = 8;  // I
+// const MS_DROP_ADDRESS = 9;    // J
+// const MS_NAME = 11;           // L
+// const MS_DATE = 16;           // Q
+// const MS_PICKUP_TIME = 17;    // R
 
 // Middleware: require a logged-in admin for protected routes
 async function requireAdminAuth(req, res, next) {
@@ -296,7 +295,10 @@ router.post('/chauffeurs', requireAdminAuth, async (req, res) => {
     return res.status(400).json({ error: 'Name and mobile number are required.' });
   }
 
-  const cleanName = name.trim();
+  // Capitalizing first letter of every word
+  const capitalizedName = name.trim().split(' ').map(word => {
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
   const cleanNumber = number.trim();
 
   try {
@@ -305,7 +307,7 @@ router.post('/chauffeurs', requireAdminAuth, async (req, res) => {
       return res.status(400).json({ error: 'A chauffeur with this mobile number already exists.' });
     }
 
-    const chauffeur = await Chauffeur.create({ name: cleanName, number: cleanNumber });
+    const chauffeur = await Chauffeur.create({ name: capitalizedName, number: cleanNumber });
     res.json({ success: true, chauffeur });
   } catch (error) {
     console.error('Error adding chauffeur:', error);
@@ -328,17 +330,15 @@ router.delete('/chauffeurs/:id', requireAdminAuth, async (req, res) => {
 
 // ================= ATTENDANCE ROUTES =================
 
-const getTodayISTString = () => {
-  const d = new Date();
-  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  const ist = new Date(utc + (330 * 60000));
-  return ist.toISOString().split('T')[0];
+const getTodayLocalString = (timezone = 'Asia/Kolkata') => {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: timezone });
 };
 
 router.get('/attendance/chauffeurs-with-mtd', requireAdminAuth, async (req, res) => {
   try {
     const chauffeurs = await Chauffeur.find({}).sort({ name: 1 }).lean();
-    const todayStr = getTodayISTString();
+    const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+    const todayStr = getTodayLocalString(clientTz);
     const monthPrefix = todayStr.substring(0, 7);
 
     const monthlyRecords = await Attendance.find({
@@ -378,7 +378,6 @@ router.get('/attendance/chauffeurs-with-mtd', requireAdminAuth, async (req, res)
         name: c.name,
         mobileNo: c.number,
         todayStatus: todayRecord ? todayRecord.status : undefined,
-        todayLastTime: todayRecord ? todayRecord.lastTimeIn : undefined,
         mtd: {
           presentDay,
           presentNight,
@@ -404,10 +403,17 @@ router.post('/attendance/mark-today', requireAdminAuth, async (req, res) => {
   }
 
   try {
-    const todayStr = getTodayISTString();
+    const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+    const todayStr = getTodayLocalString(clientTz);
+
+    const updateObj = { status };
+    if (status === 'Absent' || status === 'Leave' || status === 'Weekly-Off') {
+      updateObj.overtimeMinutes = 0;
+    }
+
     const updated = await Attendance.findOneAndUpdate(
       { chauffeurId, date: todayStr },
-      { status },
+      updateObj,
       { upsert: true, new: true }
     );
     res.json({ success: true, record: updated });
@@ -417,33 +423,17 @@ router.post('/attendance/mark-today', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.post('/attendance/enter-last-time', requireAdminAuth, async (req, res) => {
-  const { chauffeurId, lastTimeIn } = req.body;
-  if (!chauffeurId || !lastTimeIn) {
-    return res.status(400).json({ error: 'Chauffeur ID and clock-out time are required.' });
-  }
-
-  try {
-    const todayStr = getTodayISTString();
-    const record = await Attendance.findOne({ chauffeurId, date: todayStr });
-    if (!record) {
-      return res.status(400).json({ error: 'Please mark attendance first before entering last time.' });
-    }
-
-    record.lastTimeIn = lastTimeIn;
-    record.overtimeMinutes = 0; // Overtime calculation left for later
-    await record.save();
-
-    res.json({ success: true, record });
-  } catch (error) {
-    console.error('Error entering last time:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.get('/attendance/history/:id', requireAdminAuth, async (req, res) => {
   try {
-    const records = await Attendance.find({ chauffeurId: req.params.id }).sort({ date: -1 }).lean();
+    const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+    const todayStr = getTodayLocalString(clientTz);
+    const monthPrefix = todayStr.substring(0, 7);
+
+    const records = await Attendance.find({
+      chauffeurId: req.params.id,
+      date: { $regex: new RegExp('^' + monthPrefix) }
+    }).sort({ date: -1 }).lean();
+
     res.json(records);
   } catch (error) {
     console.error('Error fetching attendance history:', error);

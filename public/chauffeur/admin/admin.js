@@ -46,7 +46,11 @@ async function loadChauffeursIntoSelect() {
     (data.chauffeurs || []).forEach(c => {
       const opt = document.createElement('option');
       opt.value = c._id;
-      opt.textContent = `${c.name} (${c.number})`;
+      // Capitalizing the first letter of each word in the name
+      const formattedName = c.name ? c.name.split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(' ') : 'Unknown';
+      opt.textContent = `${formattedName} (${c.number})`;
       select.appendChild(opt);
     });
   } catch (err) {
@@ -232,15 +236,22 @@ async function loadChauffeurs() {
       return;
     }
 
-    container.innerHTML = data.chauffeurs.map(c => `
+    container.innerHTML = data.chauffeurs.map(c => {
+      // Capitalizing the first letter of each word in the name
+      const formattedName = c.name ? c.name.split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(' ') : 'Unknown';
+
+      return `
       <div class="chauffeur-row">
         <div>
-          <div class="chauffeur-row-name">${c.name}</div>
+          <div class="chauffeur-row-name">${formattedName}</div>
           <div class="chauffeur-row-number">${c.number}</div>
         </div>
         <button class="btn btn-danger" onclick="deleteChauffeur('${c._id}', '${c.name.replace(/'/g, "\\'")}')">Delete</button>
       </div>
-    `).join('');
+      `;
+    }).join('');
   } catch (err) {
     container.innerHTML = `<p class="empty-text">Network error: ${err.message}</p>`;
   }
@@ -354,10 +365,9 @@ function getTodayBadge(status) {
 
 function fmtOT(minutes) {
     if (!minutes) return '<span class="mtd-val ot">0</span><span class="mtd-unit">hrs</span>';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    const display = m > 0 ? `${h}h ${m}m` : `${h}h`;
-    return `<span class="mtd-val ot">${display}</span>`;
+    const hrs = (minutes / 60).toFixed(1);
+    const display = hrs.endsWith('.0') ? hrs.slice(0, -2) : hrs;
+    return `<span class="mtd-val ot">${display}</span><span class="mtd-unit">hrs</span>`;
 }
 
 function getInitials(name) {
@@ -375,7 +385,8 @@ function renderAttendanceGrid(data) {
         const cardClass = getCardClass(c.todayStatus);
         const badge = getTodayBadge(c.todayStatus);
         const initials = getInitials(c.name);
-        const ltDisplay = c.todayLastTime ? `Last Time: ${c.todayLastTime}` : 'Last time not entered';
+
+        const btnText = c.todayStatus ? 'Marked for today' : "Mark Today's";
 
         return `
 <div class="chauffeur-card ${cardClass}" id="card-${c._id}">
@@ -407,17 +418,15 @@ function renderAttendanceGrid(data) {
                 <div class="mtd-row-left"><div class="mtd-dot dot-leave"></div>Leave</div>
                 <div><span class="mtd-val">${c.mtd.leave}</span><span class="mtd-unit">days</span></div>
             </div>
-            <div class="mtd-row" style="display: none;">
+            <div class="mtd-row">
                 <div class="mtd-row-left"><div class="mtd-dot dot-ot"></div>Overtime</div>
                 <div>${fmtOT(c.mtd.overtimeMinutes)}</div>
             </div>
         </div>
-        <div style="font-size:10.5px;color:var(--muted);margin-top:8px;font-style:italic;">Last: ${ltDisplay}</div>
     </div>
 
     <div class="card-actions">
-        <button class="btn btn-primary" id="mark-btn-${c._id}" onclick="openMarkModal('${c._id}','${c.name.replace(/'/g,"\\'")}')">Mark Today's</button>
-        <button class="btn btn-ghost" onclick="openLastTimeModal('${c._id}','${c.name.replace(/'/g,"\\'")}')">Enter Last Time</button>
+        <button class="btn btn-primary" style="width:100%;" id="mark-btn-${c._id}" onclick="openMarkModal('${c._id}','${c.name.replace(/'/g,"\\'")}')">${btnText}</button>
     </div>
     <div style="padding:0 18px 14px;">
         <button style="width:100%;font-size:11.5px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;text-align:center;padding:6px 0;" onclick="openHistory('${c._id}','${c.name.replace(/'/g,"\\'")}')">
@@ -478,39 +487,7 @@ async function submitMarkToday() {
     }
 }
 
-function openLastTimeModal(id, name) {
-    activeId = id;
-    activeName = name;
-    document.getElementById('lt-name').textContent = name;
-    document.getElementById('lt-time-input').value = '';
 
-    const otBox = document.getElementById('ot-result-box');
-    otBox.textContent = '';
-    otBox.classList.remove('show');
-
-    document.getElementById('lasttime-modal').classList.add('open');
-}
-
-async function submitLastTime() {
-    const timeVal = document.getElementById('lt-time-input').value;
-    if (!timeVal) { showToast('Please enter a time.', 'error'); return; }
-
-    try {
-        const res = await fetch('/api/admin/attendance/enter-last-time', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chauffeurId: activeId, lastTimeIn: timeVal })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-
-        showToast(`Last time saved for ${activeName}`, 'success');
-        closeModal('lasttime-modal');
-        loadAttendance();
-    } catch (e) {
-        showToast(e.message, 'error');
-    }
-}
 
 async function openHistory(id, name) {
     document.getElementById('hist-modal-sub').textContent = `Full attendance log for ${name}`;
@@ -522,7 +499,7 @@ async function openHistory(id, name) {
         const records = await res.json();
         if (!records.length) {
             document.getElementById('hist-tbody').innerHTML =
-                '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">No records found.</td></tr>';
+                '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted);">No records found.</td></tr>';
             return;
         }
 
@@ -542,13 +519,12 @@ async function openHistory(id, name) {
             return `<tr>
                 <td>${r.date}</td>
                 <td><span style="color:${color};font-weight:600;">${r.status}</span></td>
-                <td>${r.lastTimeIn || '—'}</td>
                 <td>${otDisplay}</td>
             </tr>`;
         }).join('');
     } catch (e) {
         document.getElementById('hist-tbody').innerHTML =
-            '<tr><td colspan="4" style="text-align:center;padding:20px;color:#dc2626;">Error loading history.</td></tr>';
+            '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">Error loading history.</td></tr>';
     }
 }
 

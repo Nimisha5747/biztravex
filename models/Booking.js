@@ -40,7 +40,7 @@ const BookingSchema = new mongoose.Schema({
     dropRegion: { type: String, default: "" },
     dropCountry: { type: String, default: "" },
     dropZipcode: { type: String, default: "" },
-    model: { type: String, default: 'retail', enum: ['retail', 'rental'] }
+    model: { type: String, default: 'retail', enum: ['retail', 'rental', 'Retail', 'Rental'] }
 
 });
 

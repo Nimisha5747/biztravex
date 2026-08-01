@@ -155,6 +155,32 @@ function showCustomConfirm(message) {
   });
 }
 
+function showCustomAlert(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customConfirmOverlay');
+    const msgEl = document.getElementById('customConfirmMessage');
+    const okBtn = document.getElementById('customConfirmOkBtn');
+    const cancelBtn = document.getElementById('customConfirmCancelBtn');
+
+    msgEl.textContent = message;
+    const oldOkText = okBtn.textContent;
+    okBtn.textContent = 'OK';
+    cancelBtn.classList.add('display-none');
+    overlay.classList.remove('display-none');
+
+    function cleanup() {
+      overlay.classList.add('display-none');
+      cancelBtn.classList.remove('display-none');
+      okBtn.textContent = oldOkText;
+      okBtn.removeEventListener('click', onOk);
+      resolve();
+    }
+    function onOk() { cleanup(); }
+
+    okBtn.addEventListener('click', onOk);
+  });
+}
+
 // Check active session
 function checkSession() {
   const savedChauffeur = localStorage.getItem('chauffeur');
@@ -639,6 +665,14 @@ async function submitVehicleReadiness() {
 
     document.getElementById('dashShiftInfo').textContent = `Mobile Number : ${currentChauffeur.number} | Bookings : ${activeShiftBookings.length}`;
     showDashboardView();
+
+    const toast = document.getElementById('readinessToast');
+    if (toast) {
+      toast.classList.remove('display-none');
+      setTimeout(() => {
+        toast.classList.add('display-none');
+      }, 3000);
+    }
   } catch (err) {
     readinessBtn.disabled = false;
     readinessBtn.textContent = 'Submit & Start Shift';
@@ -1245,10 +1279,10 @@ function toggleOtherTextDynamic(bookingId) {
   }
 }
 
-function submitPunchOut() {
+async function submitPunchOut() {
   const checkedBoxes = document.querySelectorAll('input[name="pendingBookingCheck"]:checked');
   if (checkedBoxes.length === 0) {
-    alert('Please select at least one pending Booking ID.');
+    await showCustomAlert('Please select at least one pending Booking ID.');
     return;
   }
 
@@ -1264,7 +1298,7 @@ function submitPunchOut() {
       : punchedInBookingsLocal.includes(bookingId);
 
     if (!punchInDone) {
-      alert(`Please fill the Punch In form for Booking ID ${bookingId} first.`);
+      await showCustomAlert(`Please fill the Punch In form for Booking ID ${bookingId} first.`);
       return;
     }
   }

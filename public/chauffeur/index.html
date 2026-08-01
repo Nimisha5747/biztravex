@@ -103,6 +103,7 @@
 
       <!-- ===================== VIEW 3: MAIN DASHBOARD (PUNCH IN / PUNCH OUT) ===================== -->
       <section id="dashboardView" class="view-panel">
+        <div id="readinessToast" class="toast-message display-none" style="margin-bottom: 16px; margin-top: 0px;">Successfully Submitted</div>
         <div class="welcome-card">
           <span class="welcome-tag">Today's Shift</span>
           <h2 id="dashChauffeurName">Welcome!</h2>
@@ -457,6 +458,23 @@
     </div>
   </div>
 
+  <script>
+    (function() {
+        const originalFetch = window.fetch;
+        window.fetch = function (url, options = {}) {
+            options.headers = options.headers || {};
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (options.headers instanceof Headers) {
+                options.headers.set('x-timezone', tz);
+            } else if (Array.isArray(options.headers)) {
+                options.headers.push(['x-timezone', tz]);
+            } else {
+                options.headers['x-timezone'] = tz;
+            }
+            return originalFetch(url, options);
+        };
+    })();
+  </script>
   <script src="app.js"></script>
 </body>
 

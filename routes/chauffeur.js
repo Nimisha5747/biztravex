@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const Chauffeur = require('../models/Chauffeur');
 const Shift = require('../models/Shift');
 const Booking = require('../models/Booking');
-const { IST_OFFSET_MS, parseRowDateTime, getCalendarDateFromLogInTime } = require('../utils/sheetsHelpers');
+const Attendance = require('../models/Attendance');
+const { parseRowDateTime } = require('../utils/sheetsHelpers');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -85,6 +86,13 @@ router.get('/api/me', (req, res) => {
 
 // ================= PUNCH IN & PUNCH OUT ROUTES =================
 
+const getTimezoneOffsetMs = (timeZone) => {
+  const date = new Date();
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
+  return tzDate.getTime() - utcDate.getTime();
+};
+
 // Endpoint: Fetch assigned bookings for today's shift within a 14-hour window
 router.get('/api/bookings/shift-window', async (req, res) => {
   const { startTime, name } = req.query;
@@ -100,7 +108,10 @@ router.get('/api/bookings/shift-window', async (req, res) => {
     if (isNaN(parsedRaw.getTime())) {
       return res.status(400).json({ error: 'Invalid startTime format.' });
     }
-    const shiftStart = new Date(parsedRaw.getTime() - IST_OFFSET_MS);
+    const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+    const tzOffsetMs = getTimezoneOffsetMs(clientTz);
+
+    const shiftStart = new Date(parsedRaw.getTime() - tzOffsetMs);
     if (isNaN(shiftStart.getTime())) {
       return res.status(400).json({ error: 'Invalid startTime format.' });
     }
@@ -162,9 +173,8 @@ router.post('/api/punch-in', async (req, res) => {
         await shift.save();
       }
     } else {
-      const options = { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
-      const localTime = new Date().toLocaleString('en-US', options);
-      const dateStr = getCalendarDateFromLogInTime(localTime);
+      const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+      const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: clientTz });
 
       await Shift.create({
         chauffeur: { name, number },
@@ -226,9 +236,8 @@ router.post('/api/punch-out', async (req, res) => {
           await shift.save();
         }
       } else {
-        const options = { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
-        const localTime = clientTimestamp || new Date().toLocaleString('en-US', options);
-        const dateStr = getCalendarDateFromLogInTime(localTime);
+        const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+        const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: clientTz });
 
         await Shift.create({
           chauffeur: { name, number },
@@ -321,7 +330,8 @@ router.post('/api/shift/start', upload.array('readinessImages', 10), async (req,
     }
 
     const readinessImageLink = readinessImageLinks.join('\n');
-    const dateStr = getCalendarDateFromLogInTime(localTime);
+    const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+    const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: clientTz });
 
     const shift = await Shift.create({
       chauffeur: { name, number },
@@ -439,21 +449,64 @@ router.post('/api/shift/end', upload.single('image'), async (req, res) => {
       }
     }
 
+    let targetShift = null;
+    let calculatedOvertimeMinutes = 0;
+
     if (shiftRowIndex && mongoose.Types.ObjectId.isValid(shiftRowIndex)) {
       const shift = await Shift.findById(shiftRowIndex);
       if (shift) {
         if (!skipLogoutTime) shift.logOutTime = localTime;
         if (imageLink) shift.endShiftImageLink = imageLink;
+
+        if (shift.logInTime && shift.logOutTime) {
+          const loginDate = new Date(shift.logInTime);
+          const logoutDate = new Date(shift.logOutTime);
+          if (!isNaN(loginDate.getTime()) && !isNaN(logoutDate.getTime())) {
+            const diffMs = logoutDate.getTime() - loginDate.getTime();
+            const diffMinutes = Math.floor(diffMs / 60000);
+            const ot = diffMinutes - 780; // 13 hours = 780 minutes
+            if (ot > 0) {
+              calculatedOvertimeMinutes = ot;
+            }
+          }
+        }
+
         await shift.save();
+        targetShift = shift;
       }
     } else {
-      const dateStr = getCalendarDateFromLogInTime(localTime);
-      await Shift.create({
+      const clientTz = req.headers['x-timezone'] || 'Asia/Kolkata';
+      const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: clientTz });
+      const newShift = await Shift.create({
         chauffeur: { name: chauffeurName, number: chauffeurNumber },
         logOutTime: skipLogoutTime ? '' : localTime,
         endShiftImageLink: imageLink || '',
         dateStr
       });
+      targetShift = newShift;
+    }
+
+    if (targetShift) {
+      try {
+        const cleanNumber = (targetShift.chauffeur && targetShift.chauffeur.number) 
+          ? targetShift.chauffeur.number.replace(/\D/g, '').slice(-9) 
+          : '';
+        if (cleanNumber) {
+          const chauffeurDoc = await Chauffeur.findOne({ number: { $regex: cleanNumber + '$' } });
+          if (chauffeurDoc) {
+            const attendanceRecord = await Attendance.findOne({
+              chauffeurId: chauffeurDoc._id,
+              date: targetShift.dateStr
+            });
+            if (attendanceRecord) {
+              attendanceRecord.overtimeMinutes = calculatedOvertimeMinutes;
+              await attendanceRecord.save();
+            }
+          }
+        }
+      } catch (attendanceErr) {
+        console.error('Error syncing shift overtime with attendance record:', attendanceErr);
+      }
     }
 
     res.json({ success: true, message: 'Shift ended and logged successfully!', imageLink });

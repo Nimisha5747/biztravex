@@ -4,7 +4,6 @@ const AttendanceSchema = new mongoose.Schema({
     chauffeurId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chauffeur', required: true },
     date: { type: String, required: true }, // Format: YYYY-MM-DD (local date)
     status: { type: String, required: true, enum: ['Present-Day', 'Present-Night', 'Absent', 'Leave', 'Weekly-Off'] },
-    lastTimeIn: { type: String, default: "" }, // Format: HH:MM
     overtimeMinutes: { type: Number, default: 0 }
 });
 

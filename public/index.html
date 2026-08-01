@@ -199,6 +199,10 @@
                                     <option value="rental">Rental</option>
                                 </select>
                             </div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Client Name:</label>
+                                <input type="text" id="upload-client" placeholder="e.g. Thriwe" required class="text-stone-700 text-xs border border-stone-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:border-blue-500 w-36">
+                            </div>
                         </div>
                         <div class="pt-2 border-t border-stone-100">
                             <label
@@ -345,20 +349,20 @@
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Chauffeur Name</label>
+                        <select id="m-chauffeur-select" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white mb-2" onchange="handleManualChauffeurChange(this)">
+                            <option value="">-- Select Chauffeur --</option>
+                        </select>
                         <input type="text" id="m-chauffeur-name" placeholder="e.g. Rajnish"
-                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
-                    </div>
-                    <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Chauffeur Phone</label>
-                        <input type="text" id="m-chauffeur-phone" placeholder="e.g. +971..."
-                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white hidden">
                     </div>
                     <div><label class="block font-semibold mb-1.5 text-stone-700 text-xs uppercase tracking-wide">Distance (KM)</label>
                         <input type="number" step="0.1" id="m-distance" placeholder="e.g. 15.5"
                             class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
                     </div>
                 </div>
+                <input type="hidden" id="m-chauffeur-phone">
             </div>
             <div class="px-6 py-4 bg-stone-50 border-t border-stone-100 flex justify-end gap-3 shrink-0">
                 <button onclick="closeManualModal()"
@@ -478,6 +482,22 @@
     </div>
 
     <script>
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                options.headers = options.headers || {};
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (options.headers instanceof Headers) {
+                    options.headers.set('x-timezone', tz);
+                } else if (Array.isArray(options.headers)) {
+                    options.headers.push(['x-timezone', tz]);
+                } else {
+                    options.headers['x-timezone'] = tz;
+                }
+                return originalFetch(url, options);
+            };
+        })();
+
         // ── Auth Guard ──────────────────────────────────────────────────────────
         function authHeaders(extra = {}) {
             return { ...extra, 'Authorization': `Bearer ${authToken}` };
@@ -508,7 +528,6 @@
             { value: 'status', label: 'Status' },
             { value: 'model', label: 'Model Type' },
             { value: 'chauffeurName', label: 'Chauffeur Name' },
-            { value: 'chauffeurPhone', label: 'Chauffeur Phone' },
             { value: 'carNumber', label: 'Car Plate Number' },
             { value: 'vendorName', label: 'Vendor Name' },
             { value: 'pickUpDate', label: 'Pickup Date' },
@@ -601,6 +620,13 @@
 
             const fieldOptions = UPDATABLE_FIELDS.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
 
+            const chauffeurOptions = globalChauffeursList.map(c => {
+                const formattedName = c.name ? c.name.split(' ').map(word => {
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                }).join(' ') : 'Unknown';
+                return `<option value="${formattedName}">${formattedName} (${c.number})</option>`;
+            }).join('');
+
             container.innerHTML = liveLoadedWidgetsDataset.map((row, idx) => {
                 const statusClass =
                     row.status === 'Ride In Progress' ? 'badge-inprogress' :
@@ -615,6 +641,9 @@
                         let v = row[k];
                         if (v === undefined || v === null || v === '') v = '—';
                         if (typeof v === 'object') v = JSON.stringify(v);
+                         if (k === 'model' && typeof v === 'string' && v !== '—') {
+                            v = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+                        }
                         const niceLabel = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
                         return `<div class="info-cell bg-white rounded-lg p-3 border border-stone-100 shadow-sm">
                             <div class="label">${niceLabel}</div>
@@ -677,7 +706,7 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                             <div>
                                                 <label class="upd-label">Select Attribute</label>
-                                                <select id="upd-field-${idx}" class="upd-input text-stone-400" onchange="this.classList.toggle('text-stone-400', this.value === ''); this.classList.toggle('text-stone-800', this.value !== '')">
+                                                <select id="upd-field-${idx}" class="upd-input text-stone-400" onchange="handleFieldChange(this, ${idx})">
                                                     <option value="" class="text-stone-400">Choose field</option>
                                                     ${fieldOptions.replace(/<option value="([^"]*)">/g, '<option value="$1" class="text-stone-800">')}
                                                 </select>
@@ -685,7 +714,37 @@
                                             <div>
                                                 <label class="upd-label">New Value</label>
                                                 <input type="text" id="upd-value-${idx}" placeholder="Enter new value" class="upd-input">
+                                                <select id="upd-status-select-${idx}" class="upd-input hidden" onchange="handleStatusSelectChange(this, ${idx})">
+                                                    <option value="">-- Select Status --</option>
+                                                    <option value="Not set">Not set</option>
+                                                    <option value="Completed">Completed</option>
+                                                    <option value="Cancelled">Cancelled</option>
+                                                    <option value="No-show">No-show</option>
+                                                    <option value="other">Other (write custom status)</option>
+                                                </select>
+                                                <select id="upd-model-select-${idx}" class="upd-input hidden" onchange="handleModelSelectChange(this, ${idx})">
+                                                    <option value="">-- Select Model Type --</option>
+                                                    <option value="Retail">Retail</option>
+                                                    <option value="Rental">Rental</option>
+                                                </select>
+                                                <select id="upd-chauffeur-select-${idx}" class="upd-input hidden" onchange="handleChauffeurSelectChange(this, ${idx})">
+                                                    <option value="">-- Select Chauffeur --</option>
+                                                    ${chauffeurOptions}
+                                                    <option value="other">Other (write custom chauffeur)</option>
+                                                </select>
+                                                <select id="upd-serviceType-select-${idx}" class="upd-input hidden" onchange="handleServiceTypeSelectChange(this, ${idx})">
+                                                    <option value="">-- Select Service Type --</option>
+                                                    <option value="Pickup">Pickup</option>
+                                                    <option value="Drop">Drop</option>
+                                                </select>
                                             </div>
+                                        </div>
+                                        <div>
+                                            <label class="upd-label">Reason for Update</label>
+                                            <input type="text" id="upd-reason-${idx}" placeholder="Enter reason (optional)" class="upd-input">
+                                            <select id="upd-reason-select-${idx}" class="upd-input hidden" onchange="handleReasonSelectChange(this, ${idx})">
+                                                <option value="">-- Select Reason --</option>
+                                            </select>
                                         </div>
                                         <div class="flex justify-end pt-2">
                                             <button onclick="submitFieldUpdate(${idx}, '${row._id}', '${row.bookingId}')" class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
@@ -781,6 +840,7 @@
                             <span class="text-stone-800 font-medium">${log.changesMade[field].new}</span>
                         </div>`).join('');
                     const remarkTxt = log.description || log.remarks || '';
+                    const reasonTxt = log.reason ? `<p class="text-xs text-stone-500 italic mt-1"><span class="font-semibold text-slate-700">Reason:</span> ${log.reason}</p>` : '';
                     return `
                         <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-sm space-y-1.5">
                             <div class="flex justify-between items-start">
@@ -789,6 +849,7 @@
                             </div>
                             <p class="font-semibold text-stone-800 text-xs">${log.action || 'Update'}</p>
                             ${remarkTxt ? `<p class="text-xs text-stone-500">${remarkTxt}</p>` : ''}
+                            ${reasonTxt}
                             ${changes}
                         </div>`;
                 }).join('');
@@ -800,23 +861,77 @@
         async function submitFieldUpdate(idx, docId, bookingId) {
             const field = document.getElementById(`upd-field-${idx}`).value;
             const value = document.getElementById(`upd-value-${idx}`).value.trim();
+            const reason = document.getElementById(`upd-reason-${idx}`).value.trim();
 
             if (!field) return alert('Please select an attribute to update.');
             if (!value) return alert('Please enter a new value.');
+
+            let chauffeurPhone = '';
+            if (field === 'chauffeurName') {
+                const chauffeurSel = document.getElementById(`upd-chauffeur-select-${idx}`);
+                if (chauffeurSel && chauffeurSel.value !== 'other') {
+                    const selectedOption = chauffeurSel.options[chauffeurSel.selectedIndex];
+                    if (selectedOption) {
+                        chauffeurPhone = selectedOption.getAttribute('data-phone') || '';
+                    }
+                }
+            }
 
             try {
                 const res = await authFetch('/api/bookings/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: docId, field: field, newValue: value })
+                    body: JSON.stringify({ id: docId, field: field, newValue: value, reason: reason, chauffeurPhone: chauffeurPhone })
                 });
 
                 if (res.ok) {
                     document.getElementById(`upd-field-${idx}`).value = '';
                     document.getElementById(`upd-value-${idx}`).value = '';
+                    document.getElementById(`upd-reason-${idx}`).value = '';
+
+                    const statusSel = document.getElementById(`upd-status-select-${idx}`);
+                    const modelSel = document.getElementById(`upd-model-select-${idx}`);
+                    const chauffeurSel = document.getElementById(`upd-chauffeur-select-${idx}`);
+                    const serviceTypeSel = document.getElementById(`upd-serviceType-select-${idx}`);
+                    const reasonSel = document.getElementById(`upd-reason-select-${idx}`);
+                    const valInput = document.getElementById(`upd-value-${idx}`);
+                    const reasonInput = document.getElementById(`upd-reason-${idx}`);
+
+                    if (statusSel) {
+                        statusSel.value = '';
+                        statusSel.classList.add('hidden');
+                    }
+                    if (modelSel) {
+                        modelSel.value = '';
+                        modelSel.classList.add('hidden');
+                    }
+                    if (chauffeurSel) {
+                        chauffeurSel.value = '';
+                        chauffeurSel.classList.add('hidden');
+                    }
+                    if (serviceTypeSel) {
+                        serviceTypeSel.value = '';
+                        serviceTypeSel.classList.add('hidden');
+                    }
+                    if (reasonSel) {
+                        reasonSel.value = '';
+                        reasonSel.classList.add('hidden');
+                    }
+                    if (valInput) {
+                        valInput.classList.remove('hidden');
+                        valInput.type = 'text';
+                        valInput.placeholder = 'Enter new value';
+                    }
+                    if (reasonInput) {
+                        reasonInput.classList.remove('hidden');
+                        reasonInput.placeholder = 'Enter reason (optional)';
+                    }
 
                     const doc = liveLoadedWidgetsDataset[idx];
                     doc[field] = value;
+                    if (field === 'chauffeurName') {
+                        doc.chauffeurPhone = chauffeurPhone;
+                    }
                     liveLoadedWidgetsDataset[idx] = doc;
                     await loadAuditLog(idx, bookingId);
 
@@ -833,6 +948,173 @@
                 alert('Network error. Could not save update.');
             }
         }
+
+        function handleFieldChange(selectEl, idx) {
+            const val = selectEl.value;
+            
+            // Toggle styling colors for placeholder
+            selectEl.classList.toggle('text-stone-400', val === '');
+            selectEl.classList.toggle('text-stone-800', val !== '');
+
+            const inputEl = document.getElementById(`upd-value-${idx}`);
+            const statusSelectEl = document.getElementById('upd-status-select-' + idx);
+            const modelSelectEl = document.getElementById('upd-model-select-' + idx);
+            const chauffeurSelectEl = document.getElementById('upd-chauffeur-select-' + idx);
+            const serviceTypeSelectEl = document.getElementById('upd-serviceType-select-' + idx);
+            const reasonInputEl = document.getElementById('upd-reason-' + idx);
+            const reasonSelectEl = document.getElementById('upd-reason-select-' + idx);
+
+            if (!inputEl) return;
+
+            // Clear values and restore defaults
+            inputEl.value = '';
+            inputEl.type = 'text';
+            inputEl.placeholder = 'Enter new value';
+            if (statusSelectEl) statusSelectEl.value = '';
+            if (modelSelectEl) modelSelectEl.value = '';
+            if (chauffeurSelectEl) chauffeurSelectEl.value = '';
+            if (serviceTypeSelectEl) serviceTypeSelectEl.value = '';
+            if (reasonInputEl) {
+                reasonInputEl.value = '';
+                reasonInputEl.placeholder = 'Enter reason (optional)';
+            }
+            if (reasonSelectEl) reasonSelectEl.value = '';
+
+            inputEl.classList.remove('hidden');
+            if (statusSelectEl) statusSelectEl.classList.add('hidden');
+            if (modelSelectEl) modelSelectEl.classList.add('hidden');
+            if (chauffeurSelectEl) chauffeurSelectEl.classList.add('hidden');
+            if (serviceTypeSelectEl) serviceTypeSelectEl.classList.add('hidden');
+            if (reasonInputEl) reasonInputEl.classList.remove('hidden');
+            if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
+
+            if (val === 'pickUpDate') {
+                inputEl.type = 'date';
+                inputEl.placeholder = '';
+            } else if (val === 'pickUpTime') {
+                inputEl.type = 'time';
+                inputEl.placeholder = '';
+            } else if (val === 'status') {
+                inputEl.classList.add('hidden');
+                if (statusSelectEl) statusSelectEl.classList.remove('hidden');
+            } else if (val === 'model') {
+                inputEl.classList.add('hidden');
+                if (modelSelectEl) modelSelectEl.classList.remove('hidden');
+            } else if (val === 'chauffeurName') {
+                inputEl.classList.add('hidden');
+                if (chauffeurSelectEl) chauffeurSelectEl.classList.remove('hidden');
+            } else if (val === 'serviceType') {
+                inputEl.classList.add('hidden');
+                if (serviceTypeSelectEl) serviceTypeSelectEl.classList.remove('hidden');
+            }
+        }
+
+        window.handleServiceTypeSelectChange = function(serviceTypeSelectEl, idx) {
+            const val = serviceTypeSelectEl.value;
+            const inputEl = document.getElementById(`upd-value-${idx}`);
+            if (inputEl) {
+                inputEl.value = val;
+            }
+        };
+
+        window.handleModelSelectChange = function(modelSelectEl, idx) {
+            const val = modelSelectEl.value;
+            const inputEl = document.getElementById(`upd-value-${idx}`);
+            if (inputEl) {
+                inputEl.value = val;
+            }
+        };
+
+        window.handleChauffeurSelectChange = function(chauffeurSelectEl, idx) {
+            const val = chauffeurSelectEl.value;
+            const inputEl = document.getElementById(`upd-value-${idx}`);
+            if (!inputEl) return;
+
+            if (val === 'other') {
+                inputEl.classList.remove('hidden');
+                inputEl.value = '';
+                inputEl.placeholder = 'Enter custom chauffeur name';
+                inputEl.focus();
+            } else {
+                inputEl.classList.add('hidden');
+                inputEl.value = val;
+            }
+        };
+
+        window.handleStatusSelectChange = function(statusSelectEl, idx) {
+            const val = statusSelectEl.value;
+            const inputEl = document.getElementById(`upd-value-${idx}`);
+            const reasonInputEl = document.getElementById(`upd-reason-${idx}`);
+            const reasonSelectEl = document.getElementById(`upd-reason-select-${idx}`);
+
+            if (!inputEl) return;
+
+            // Clear reason selections
+            if (reasonInputEl) reasonInputEl.value = '';
+            if (reasonSelectEl) reasonSelectEl.value = '';
+
+            if (val === 'other') {
+                inputEl.classList.remove('hidden');
+                inputEl.value = '';
+                inputEl.placeholder = 'Enter custom status';
+                inputEl.focus();
+
+                // Show default reason input
+                if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
+                if (reasonInputEl) reasonInputEl.classList.remove('hidden');
+            } else {
+                inputEl.classList.add('hidden');
+                inputEl.value = val;
+
+                if (val === 'Cancelled') {
+                    if (reasonInputEl) reasonInputEl.classList.add('hidden');
+                    if (reasonSelectEl) {
+                        reasonSelectEl.classList.remove('hidden');
+                        reasonSelectEl.innerHTML = `
+                            <option value="">-- Select Reason --</option>
+                            <option value="Cancelled by client">Cancelled by client</option>
+                            <option value="Cancelled by vendor">Cancelled by vendor</option>
+                            <option value="Cancelled by customer more than 12 hrs prior">Cancelled by customer more than 12 hrs prior</option>
+                            <option value="cancelled by client">cancelled by client</option>
+                            <option value="cancelled by vendor">cancelled by vendor</option>
+                            <option value="other">Other (write custom reason)</option>
+                        `;
+                    }
+                } else if (val === 'No-show') {
+                    if (reasonInputEl) reasonInputEl.classList.add('hidden');
+                    if (reasonSelectEl) {
+                        reasonSelectEl.classList.remove('hidden');
+                        reasonSelectEl.innerHTML = `
+                            <option value="">-- Select Reason --</option>
+                            <option value="cancelled by customer within 12 hrs">cancelled by customer within 12 hrs</option>
+                            <option value="No response">No response</option>
+                            <option value="other">Other (write custom reason)</option>
+                        `;
+                    }
+                } else {
+                    // Completed or other selection
+                    if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
+                    if (reasonInputEl) reasonInputEl.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.handleReasonSelectChange = function(reasonSelectEl, idx) {
+            const val = reasonSelectEl.value;
+            const reasonInputEl = document.getElementById(`upd-reason-${idx}`);
+
+            if (!reasonInputEl) return;
+
+            if (val === 'other') {
+                reasonInputEl.classList.remove('hidden');
+                reasonInputEl.value = '';
+                reasonInputEl.placeholder = 'Enter custom reason';
+                reasonInputEl.focus();
+            } else {
+                reasonInputEl.classList.add('hidden');
+                reasonInputEl.value = val;
+            }
+        };
 
         async function submitRemarkUpdate(idx, docId, bookingId) {
             const input = document.getElementById(`remark-value-${idx}`);
@@ -877,7 +1159,7 @@
                         <div class="flex gap-2.5">
                             <span class="text-sm">⚠️</span>
                             <div>
-                                <p class="font-bold uppercase tracking-wider text-[10px] text-amber-900 mb-0.5">Import Warning</p>
+                                <p class="font-bold uppercase tracking-wider text-[10px] text-amber-900 mb-0.5">Warning</p>
                                 <p class="font-medium text-stone-700">${msg}</p>
                             </div>
                         </div>
@@ -915,7 +1197,13 @@
                     alert('Please select a Model Type (Retail or Rental) before importing.');
                     return;
                 }
+                const clientInput = document.getElementById('upload-client');
+                if (!clientInput.value || !clientInput.value.trim()) {
+                    alert('Please enter a Client Name before importing.');
+                    return;
+                }
                 formData.append('model', modelSelect.value);
+                formData.append('clientName', clientInput.value.trim());
             }
             const endpoint = type === 'dump' ? '/api/bookings/upload-dump' : '/api/bookings/upload-vendor';
             try {
@@ -933,6 +1221,8 @@
                     renderWarnings(warnings);
 
                     input.value = '';
+                    const clientInput = document.getElementById('upload-client');
+                    if (clientInput) clientInput.value = '';
                     if (liveLoadedWidgetsDataset.length > 0) executeFilteredSearchPipeline();
                 } else {
                     const err = await response.json().catch(() => ({}));
@@ -944,9 +1234,69 @@
         function openManualModal() {
             document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('manual-modal').classList.remove('hidden');
+            
+            const selectEl = document.getElementById('m-chauffeur-select');
+            const nameEl = document.getElementById('m-chauffeur-name');
+            if (selectEl) selectEl.value = '';
+            if (nameEl) {
+                nameEl.value = '';
+                nameEl.classList.add('hidden');
+            }
         }
         function closeManualModal() {
             document.getElementById('manual-modal').classList.add('hidden');
+        }
+
+        window.handleManualChauffeurChange = function(selectEl) {
+            const val = selectEl.value;
+            const nameEl = document.getElementById('m-chauffeur-name');
+            const phoneEl = document.getElementById('m-chauffeur-phone');
+            
+            if (!nameEl) return;
+
+            if (val === 'other') {
+                nameEl.classList.remove('hidden');
+                nameEl.value = '';
+                nameEl.placeholder = 'Enter custom chauffeur name';
+                nameEl.focus();
+                if (phoneEl) phoneEl.value = '';
+            } else {
+                nameEl.classList.add('hidden');
+                nameEl.value = val;
+                
+                const selectedOption = selectEl.options[selectEl.selectedIndex];
+                const phone = selectedOption ? selectedOption.getAttribute('data-phone') : '';
+                if (phoneEl) phoneEl.value = phone || '';
+            }
+        };
+
+        function populateAllChauffeurSelects() {
+            const options = globalChauffeursList.map(c => {
+                const formattedName = c.name ? c.name.split(' ').map(word => {
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                }).join(' ') : 'Unknown';
+                return `<option value="${formattedName}" data-phone="${c.number}">${formattedName} (${c.number})</option>`;
+            }).join('');
+
+            // 1. Populate the manual modal dropdown
+            const manualSelect = document.getElementById('m-chauffeur-select');
+            if (manualSelect) {
+                manualSelect.innerHTML = `
+                    <option value="">-- Select Chauffeur --</option>
+                    ${options}
+                    <option value="other">Other (write custom chauffeur)</option>
+                `;
+            }
+
+            // 2. Populate all inline update dropdowns currently in the DOM
+            const inlineSelects = document.querySelectorAll('[id^="upd-chauffeur-select-"]');
+            inlineSelects.forEach(selectEl => {
+                selectEl.innerHTML = `
+                    <option value="">-- Select Chauffeur --</option>
+                    ${options}
+                    <option value="other">Other (write custom chauffeur)</option>
+                `;
+            });
         }
 
         // ── Zone Management ─────────────────────────────────────────────────
@@ -1172,7 +1522,23 @@
                 } else { alert('Failed to create booking.'); }
             } catch (err) { alert('Network error. Could not create booking.'); }
         }
+        let globalChauffeursList = [];
+
+        async function loadGlobalChauffeurs() {
+            try {
+                const res = await authFetch('/api/admin/chauffeurs');
+                if (res.ok) {
+                    const data = await res.json();
+                    globalChauffeursList = data.chauffeurs || [];
+                    populateAllChauffeurSelects();
+                }
+            } catch (e) {
+                console.error('Failed to load global chauffeurs:', e);
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+            loadGlobalChauffeurs();
             let savedWarnings = [];
             try {
                 savedWarnings = JSON.parse(localStorage.getItem('importWarnings') || '[]');

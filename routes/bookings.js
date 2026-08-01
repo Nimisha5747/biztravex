@@ -21,6 +21,20 @@ const getServiceType = (pickupAddress, dropAddress) => {
     return "—";
 };
 
+const capitalizeWords = (str) => {
+    if (!str) return '';
+    return str.split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+};
+
+const getLast9Digits = (phone) => {
+    if (!phone) return '';
+    const digits = String(phone).replace(/\D/g, '');
+    return digits.length >= 9 ? digits.slice(-9) : digits;
+};
+
+
 // Search Pipeline Query Ingest Route
 router.post('/api/bookings/filter', requireAuth, async (req, res) => {
     try {
@@ -87,9 +101,12 @@ router.post('/api/bookings/manual', requireAuth, async (req, res) => {
             }
         }
 
+        const capitalizedChauffeurName = chauffeurName ? capitalizeWords(chauffeurName.trim()) : '—';
+        const capitalizedModel = model ? capitalizeWords(model.trim()) : '—';
+
         const newDoc = new Booking({
             bookingId: bookingId || `BIZ-${Date.now()}`,
-            model: model || '—',
+            model: capitalizedModel,
             pickUpDate,
             pickUpTime: pickUpTime || '00:00',
             clientName: clientName || '—',
@@ -110,9 +127,10 @@ router.post('/api/bookings/manual', requireAuth, async (req, res) => {
             carType: carType || '—',
             status: '—',
             bookingSource: 'Manual Entry',
-            chauffeurName: chauffeurName || '—',
+            chauffeurName: capitalizedChauffeurName,
             chauffeurPhone: chauffeurPhone || '—'
         });
+
 
         await newDoc.save();
 
@@ -132,18 +150,18 @@ router.post('/api/bookings/manual', requireAuth, async (req, res) => {
 
 // Single-field update route
 router.post('/api/bookings/update', requireAuth, async (req, res) => {
-    const { id, field, newValue, description } = req.body;
+    const { id, field, newValue, description, reason, chauffeurPhone } = req.body;
     const userSignature = req.user.name || req.user.email;
 
     // Legacy multi-field path
     if (!field && req.body.status !== undefined) {
-        const { status, chauffeurName, chauffeurPhone, carNumber } = req.body;
+        const { status, chauffeurName, chauffeurPhone: legacyPhone, carNumber } = req.body;
         try {
             const currentDoc = await Booking.findById(id);
             if (!currentDoc) return res.status(404).json({ error: "Booking not found." });
 
             let loggedChanges = {};
-            const fieldsToTrack = { status, chauffeurName, chauffeurPhone, carNumber };
+            const fieldsToTrack = { status, chauffeurName, chauffeurPhone: legacyPhone, carNumber };
             Object.keys(fieldsToTrack).forEach(f => {
                 if (fieldsToTrack[f] !== undefined && String(fieldsToTrack[f]).trim() !== String(currentDoc[f] || '')) {
                     loggedChanges[f] = { old: currentDoc[f] || '—', new: String(fieldsToTrack[f]).trim() };
@@ -175,13 +193,33 @@ router.post('/api/bookings/update', requireAuth, async (req, res) => {
         if (!currentDoc) return res.status(404).json({ error: 'Booking not found.' });
 
         const oldValue = currentDoc[field] !== undefined ? String(currentDoc[field]) : '—';
-        const newValueStr = String(newValue).trim();
+        let newValueStr = String(newValue).trim();
+
+        // Capitalize value if updating chauffeur name or model type
+        if ((field === 'chauffeurName' || field === 'model') && newValueStr && newValueStr !== '—') {
+            newValueStr = capitalizeWords(newValueStr);
+        }
 
         if (oldValue === newValueStr) {
             return res.json({ success: true, message: 'No change detected.', doc: currentDoc });
         }
 
-        currentDoc[field] = newValueStr;
+        let auditOldValue = oldValue;
+        let auditNewValue = newValueStr;
+
+        if (field === 'chauffeurName') {
+            const oldPhone = currentDoc.chauffeurPhone || '';
+            const newPhone = chauffeurPhone ? String(chauffeurPhone).trim() : '';
+
+            currentDoc.chauffeurName = newValueStr;
+            currentDoc.chauffeurPhone = newPhone;
+
+            auditOldValue = oldPhone ? `${oldValue} (${getLast9Digits(oldPhone)})` : oldValue;
+            auditNewValue = newPhone ? `${newValueStr} (${getLast9Digits(newPhone)})` : newValueStr;
+        } else {
+            currentDoc[field] = newValueStr;
+        }
+
         await currentDoc.save();
 
         const actionLabel = field === 'remarks' ? 'Remark Added' : `Field Updated: ${field}`;
@@ -190,8 +228,9 @@ router.post('/api/bookings/update', requireAuth, async (req, res) => {
             bookingId: currentDoc.bookingId,
             updatedBy: String(userSignature).trim(),
             action: actionLabel,
+            reason: reason || '',
             changesMade: {
-                [field]: { old: oldValue, new: newValueStr }
+                [field]: { old: auditOldValue, new: auditNewValue }
             }
         });
         await auditEntry.save();
@@ -207,14 +246,18 @@ router.post('/api/bookings/update', requireAuth, async (req, res) => {
 router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "Payload sheet missing." });
     try {
-        const { model } = req.body;
+        const { model, clientName: bodyClientName } = req.body;
         if (!model || (model !== 'retail' && model !== 'rental')) {
             return res.status(400).json({ error: "Booking model selection ('retail' or 'rental') is required." });
         }
+        if (!bodyClientName || !bodyClientName.trim()) {
+            return res.status(400).json({ error: "Client Name is required." });
+        }
+        const clientName = bodyClientName.trim();
         const originalName = req.file.originalname;
         const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
-        const fileNameMatch = nameWithoutExt.match(/^(.+?)_dump_(\d{1,2}-\d{1,2}|\d{1,2}[A-Za-z]{3})$/i);
-        const clientName = fileNameMatch ? fileNameMatch[1].trim() : "Unknown";
+        // const fileNameMatch = nameWithoutExt.match(/^(.+?)_dump_(\d{1,2}-\d{1,2}|\d{1,2}[A-Za-z]{3})$/i);
+        // const clientName = fileNameMatch ? fileNameMatch[1].trim() : "Unknown";
 
         const parseExcelDate = (val) => {
             if (!val) return "—";
@@ -366,7 +409,7 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
                     pickupAddress.toLowerCase().includes('abu dhabi') || 
                     dropAddress.toLowerCase().includes('abu dhabi')
                 ) {
-                    warnings.push(`Booking ${trimmedId} contains "Abu Dhabi" in the address.`);
+                    warnings.push(`Booking ${trimmedId} contains no Abu Dhabi in the address.`);
                 }
 
                 const existingDoc = await Booking.findOne({ bookingId: trimmedId });
@@ -385,10 +428,11 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
                     }
                 }
 
+                const capitalizedModel = model ? capitalizeWords(model.trim()) : '—';
                 const newValues = {
                     bookingId: trimmedId,
                     clientName: clientName,
-                    model: model,
+                    model: capitalizedModel,
                     pickUpDate: parseExcelDate(row["Pick Up Date"]),
                     pickUpTime: parseExcelTime(row["Pick Up Time"]),
                     pickupAddress: pickupAddress,
@@ -498,9 +542,11 @@ router.post('/api/bookings/upload-vendor', requireAuth, upload.single('file'), a
                     const incomingPlate = row["Plate Number"];
                     const { name: incomingChauffeur, phone: incomingPhone } = parseDriverDetails(driverDetailsRaw.trim());
 
-                    if (incomingChauffeur && currentDoc.chauffeurName !== incomingChauffeur) {
+                    const capitalizedIncomingChauffeur = incomingChauffeur ? capitalizeWords(incomingChauffeur.trim()) : '';
+                    if (capitalizedIncomingChauffeur && currentDoc.chauffeurName !== capitalizedIncomingChauffeur) {
                         const oldName = currentDoc.chauffeurName ? currentDoc.chauffeurName : '—';
-                        currentDoc.chauffeurName = incomingChauffeur;
+                        currentDoc.chauffeurName = capitalizedIncomingChauffeur;
+
                         changed = true;
                         const timestamp = new Date().toLocaleString('en-GB');
                         chauffeurAudit = `[${timestamp}] '${oldName}' to '${incomingChauffeur}'`;
