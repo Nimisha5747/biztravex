@@ -12,31 +12,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // ================= AUTHENTICATION ROUTES (Chauffeur Native) =================
 
-// Register a new chauffeur natively
-router.post('/api/chauffeur/auth/register', async (req, res) => {
-  const { name, number } = req.body;
-
-  if (!name || !number) {
-    return res.status(400).json({ error: 'Please provide both Name and Mobile Number.' });
-  }
-
-  const cleanName = name.trim();
-  const cleanNumber = number.trim();
-
-  try {
-    const existing = await Chauffeur.findOne({ number: cleanNumber });
-    if (existing) {
-      return res.status(400).json({ error: 'Mobile number already registered. Please log in.' });
-    }
-
-    await Chauffeur.create({ name: cleanName, number: cleanNumber });
-    res.json({ success: true, message: 'Account created successfully! You can now log in.' });
-  } catch (error) {
-    console.error('Error registering chauffeur:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Login chauffeur natively
 router.post('/api/chauffeur/auth/login', async (req, res) => {
   const { name, number } = req.body;
@@ -488,8 +463,8 @@ router.post('/api/shift/end', upload.single('image'), async (req, res) => {
 
     if (targetShift) {
       try {
-        const cleanNumber = (targetShift.chauffeur && targetShift.chauffeur.number) 
-          ? targetShift.chauffeur.number.replace(/\D/g, '').slice(-9) 
+        const cleanNumber = (targetShift.chauffeur && targetShift.chauffeur.number)
+          ? targetShift.chauffeur.number.replace(/\D/g, '').slice(-9)
           : '';
         if (cleanNumber) {
           const chauffeurDoc = await Chauffeur.findOne({ number: { $regex: cleanNumber + '$' } });

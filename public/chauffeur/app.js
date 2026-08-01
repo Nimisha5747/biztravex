@@ -264,15 +264,13 @@ function showView(viewId) {
   }
 
   // Save the current view so we stay on it after refresh
-  if (viewId !== 'authView' && viewId !== 'registerView') {
+  if (viewId !== 'authView') {
     localStorage.setItem('activeViewId', viewId);
   }
 }
 
 function navigateBack() {
-  if (activeViewId === 'registerView') {
-    showAuthView();
-  } else if ((activeViewId === 'punchInView' || activeViewId === 'punchOutView') && currentPunchMode === 'PENDING') {
+  if ((activeViewId === 'punchInView' || activeViewId === 'punchOutView') && currentPunchMode === 'PENDING') {
     showPendingFormsView();
   } else if (activeViewId === 'submitPhotosMenuView') {
     openSubmitPhotos();
@@ -295,11 +293,6 @@ function backFromPunchForm() {
 function showAuthView() {
   document.getElementById('profileChip').style.display = 'none';
   showView('authView');
-}
-
-function showRegisterView() {
-  document.getElementById('profileChip').style.display = 'none';
-  showView('registerView');
 }
 
 function restoreDashboardState() {
@@ -462,45 +455,6 @@ function showSubmitPhotosMenuView() {
 }
 
 // ---------- MongoDB Auth Handlers ----------
-function submitRegister() {
-  const name = document.getElementById('regName').value.trim();
-  const number = document.getElementById('regNumber').value.trim();
-  const btn = document.getElementById('btnRegisterSubmit');
-
-  if (!name || !number) {
-    alert('Please fill in both Name and Mobile Number.');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Creating Account...';
-
-  fetch('/api/chauffeur/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, number }),
-  })
-    .then((res) => res.json().then((data) => ({ status: res.status, data })))
-    .then(({ status, data }) => {
-      btn.disabled = false;
-      btn.textContent = 'Create Account';
-
-      if (status !== 200 || data.error) {
-        alert(data.error || 'Registration failed.');
-        return;
-      }
-
-      alert(data.message || 'Account created successfully!');
-      document.getElementById('registerForm').reset();
-      showAuthView();
-    })
-    .catch((err) => {
-      btn.disabled = false;
-      btn.textContent = 'Create Account';
-      alert('Error creating account: ' + err.message);
-    });
-}
-
 function submitLogin() {
   const name = document.getElementById('loginName').value.trim();
   const number = document.getElementById('loginNumber').value.trim();

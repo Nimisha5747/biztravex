@@ -70,35 +70,6 @@
           <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block" onclick="submitLogin()">Log
             In</button>
         </form>
-        <div class="auth-footer text-center">
-          <span>First time using the portal?</span>
-          <button class="btn-link" onclick="showRegisterView()">Create an Account</button>
-        </div>
-      </section>
-
-      <!-- ===================== VIEW 2: CREATE AN ACCOUNT ===================== -->
-      <section id="registerView" class="view-panel">
-        <div class="panel-header text-center">
-          <div class="app-avatar">📝</div>
-          <h1>Create an Account</h1>
-          <p class="subtitle">Register your details into the database for shift authentication.</p>
-        </div>
-
-        <form id="registerForm" onsubmit="event.preventDefault(); submitRegister();">
-          <div class="form-group">
-            <label for="regName">Full Name</label>
-            <input type="text" id="regName" placeholder="Enter full name..." required>
-          </div>
-
-          <div class="form-group">
-            <label for="regNumber">Mobile Number</label>
-            <input type="tel" id="regNumber" placeholder="Enter 10-digit mobile number..." required>
-          </div>
-
-          <button type="submit" id="btnRegisterSubmit" class="btn btn-primary btn-block">Create Account</button>
-          <button type="button" class="btn btn-ghost btn-block margin-top-lg" onclick="showAuthView()">← Back to Log
-            In</button>
-        </form>
       </section>
 
       <!-- ===================== VIEW 3: MAIN DASHBOARD (PUNCH IN / PUNCH OUT) ===================== -->
