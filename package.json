@@ -10,7 +10,10 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
+    "cookie-session": "^2.1.1",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
+    "googleapis": "^173.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.3",
     "multer": "^2.2.0",

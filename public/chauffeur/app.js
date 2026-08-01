@@ -449,7 +449,7 @@ function submitRegister() {
   btn.disabled = true;
   btn.textContent = 'Creating Account...';
 
-  fetch('/api/auth/register', {
+  fetch('/api/chauffeur/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, number }),
@@ -488,7 +488,7 @@ function submitLogin() {
   btn.disabled = true;
   btn.textContent = 'Logging In...';
 
-  fetch('/api/auth/login', {
+  fetch('/api/chauffeur/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, number }),
