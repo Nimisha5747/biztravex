@@ -1,32 +1,5 @@
-const { google } = require('googleapis');
-
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-function getSheetsClient() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-
-  if (!email || !privateKey || !process.env.SPREADSHEET_ID) {
-    console.error('[Sheets] Missing required env vars:', {
-      hasEmail: !!email,
-      hasKey: !!privateKey,
-      hasSheetId: !!process.env.SPREADSHEET_ID
-    });
-    return null;
-  }
-
-  if (privateKey) {
-    privateKey = privateKey.replace(/\\n/g, '\n');
-  }
-
-  const auth = new google.auth.JWT({
-    email,
-    key: privateKey,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-
-  return google.sheets({ version: 'v4', auth });
-}
 
 function parseRowDateTime(rawDate, rawTime) {
   if (!rawDate) return null;
@@ -67,15 +40,6 @@ function parseRowDateTime(rawDate, rawTime) {
   return new Date(utcEpoch);
 }
 
-function getCalendarDateFromLogInTime(logInTimeStr) {
-  if (!logInTimeStr) return null;
-  const d = new Date(logInTimeStr);
-  if (isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function driveLinkToImageUrl(webViewLink) {
   if (!webViewLink) return '';
@@ -87,8 +51,6 @@ function driveLinkToImageUrl(webViewLink) {
 
 module.exports = {
   IST_OFFSET_MS,
-  getSheetsClient,
   parseRowDateTime,
-  getCalendarDateFromLogInTime,
   driveLinkToImageUrl
 };

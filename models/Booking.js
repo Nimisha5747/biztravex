@@ -5,7 +5,7 @@ const BookingSchema = new mongoose.Schema({
     pickUpDate: String,
     pickUpTime: String,
     clientName: String,
-    vendorName: { type: String, default: "" },
+    vendorName: { type: String, default: "BizTravex" },
     chauffeurName: { type: String, default: "" },
     chauffeurPhone: { type: String, default: "" },
     pickupAddress: String,

@@ -35,6 +35,200 @@ const getLast9Digits = (phone) => {
 };
 
 
+// Today's Bookings Route — returns all bookings whose pickUpDate is today
+router.get('/api/bookings/today', requireAuth, async (req, res) => {
+    try {
+        // Respect the client's timezone if provided via header
+        const clientTz = req.headers['x-timezone'] || 'UTC';
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: clientTz }); // YYYY-MM-DD
+        const bookings = await Booking.find({ pickUpDate: todayStr })
+            .select('bookingId status pickUpTime clientName customerName')
+            .sort({ pickUpTime: 1 });
+        res.json(bookings);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to load today's bookings." });
+    }
+});
+
+// Pending Chauffeur Assignments Route (Today and Tomorrow)
+router.get('/api/bookings/pending-chauffeur', requireAuth, async (req, res) => {
+    try {
+        const clientTz = req.headers['x-timezone'] || 'UTC';
+        
+        const now = new Date();
+        const options = { timeZone: clientTz, year: 'numeric', month: '2-digit', day: '2-digit' };
+        
+        // Using en-CA to format as YYYY-MM-DD
+        const formatter = new Intl.DateTimeFormat('en-CA', options);
+        
+        const todayStr = formatter.format(now);
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const tomorrowStr = formatter.format(tomorrow);
+        
+        const pendingBookings = await Booking.find({
+            pickUpDate: { $in: [todayStr, tomorrowStr] },
+            $or: [
+                { chauffeurName: { $exists: false } },
+                { chauffeurName: null },
+                { chauffeurName: "" },
+                { chauffeurName: "—" }
+            ]
+        }).select('bookingId pickUpDate pickUpTime clientName customerName status')
+          .sort({ pickUpDate: 1, pickUpTime: 1 });
+          
+        res.json({
+            today: pendingBookings.filter(b => b.pickUpDate === todayStr),
+            tomorrow: pendingBookings.filter(b => b.pickUpDate === tomorrowStr)
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to load pending chauffeur assignments." });
+    }
+});
+
+// Dashboard Summary Counts — today's KPIs for the header widget row
+router.get('/api/bookings/summary', requireAuth, async (req, res) => {
+    try {
+        const clientTz = req.headers['x-timezone'] || 'UTC';
+        const now = new Date();
+        const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: clientTz, year: 'numeric', month: '2-digit', day: '2-digit' });
+        const todayStr = fmt.format(now);
+        const tomorrowStr = fmt.format(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+
+        // Run all counts in parallel
+        const [
+            totalToday,
+            completed,
+            cancelledNoShow,
+            cancelledFree,
+            serviceFailure,
+            waiver,
+            pendingToday,
+            pendingTomorrow
+        ] = await Promise.all([
+            Booking.countDocuments({ pickUpDate: todayStr }),
+            Booking.countDocuments({ pickUpDate: todayStr, status: /^completed$/i }),
+            Booking.countDocuments({ pickUpDate: todayStr, status: /^cancelled-no show$/i }),
+            Booking.countDocuments({ pickUpDate: todayStr, status: /^cancelled-free cancellation$/i }),
+            Booking.countDocuments({ pickUpDate: todayStr, status: /^service failure$/i }),
+            Booking.countDocuments({ pickUpDate: todayStr, status: /^waiver$/i }),
+            Booking.countDocuments({
+                pickUpDate: todayStr,
+                $or: [{ chauffeurName: { $exists: false } }, { chauffeurName: null }, { chauffeurName: '' }, { chauffeurName: '—' }]
+            }),
+            Booking.countDocuments({
+                pickUpDate: tomorrowStr,
+                $or: [{ chauffeurName: { $exists: false } }, { chauffeurName: null }, { chauffeurName: '' }, { chauffeurName: '—' }]
+            })
+        ]);
+
+        res.json({
+            totalToday,
+            completed,
+            cancelledNoShow,
+            cancelledFree,
+            serviceFailure,
+            waiver,
+            pendingChauffeurToday: pendingToday,
+            pendingChauffeurTomorrow: pendingTomorrow
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to load summary.' });
+    }
+});
+
+// Export Bookings to CSV
+router.get('/api/bookings/export', requireAuth, async (req, res) => {
+    try {
+        const { type, value, status } = req.query;
+        if (!type || !value) {
+            return res.status(400).json({ error: "Missing type or value for export." });
+        }
+
+        let dateQuery = {};
+        if (type === 'date') {
+            // value is YYYY-MM-DD
+            dateQuery = { pickUpDate: value };
+        } else if (type === 'month') {
+            // value is YYYY-MM
+            dateQuery = { pickUpDate: { $regex: `^${value}-` } };
+        } else if (type === 'year') {
+            // value is YYYY
+            dateQuery = { pickUpDate: { $regex: `^${value}-` } };
+        }
+
+        let filter = { ...dateQuery };
+        if (status) {
+            // Use precise case-insensitive match for the status
+            filter.status = { $regex: new RegExp(`^${status}$`, 'i') };
+        }
+
+        const bookings = await Booking.find(filter).lean().sort({ pickUpDate: 1, pickUpTime: 1 });
+        
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ error: "No bookings found for the selected criteria." });
+        }
+
+        // Convert the array of booking objects to a worksheet with exact column sequence
+        const dataForCsv = bookings.map(b => ({
+            bookingId: b.bookingId || '',
+            uploadedAt: b.uploadedAt || '',
+            bookingSource: b.bookingSource || '',
+            vendorName: b.vendorName || '',
+            status: b.status || '',
+            serviceType: b.serviceType || '',
+            distanceKm: b.distanceKm || '',
+            zone: b.zone || '',
+            clientName: b.clientName || '',
+            noOfInfants: b.noOfInfants || '',
+            noOfLuggages: b.noOfLuggages || '',
+            noOfPassengers: b.noOfPassengers || '',
+            noOfBaby: b.noOfBaby || '',
+            customerName: b.customerName || '',
+            customerMobile: b.customerMobile || '',
+            chauffeurName: b.chauffeurName || '',
+            chauffeurPhone: b.chauffeurPhone || '',
+            carType: b.carType || '',
+            model: b.model || '',
+            carNumber: b.carNumber || '',
+            pickUpDate: b.pickUpDate || '',
+            pickUpTime: b.pickUpTime || '',
+            pickupAddress: b.pickupAddress || '',
+            pickUpRegion: b.pickUpRegion || '',
+            pickUpCountry: b.pickUpCountry || '',
+            pickUpZipcode: b.pickUpZipcode || '',
+            dropAddress: b.dropAddress || '',
+            dropRegion: b.dropRegion || '',
+            dropCountry: b.dropCountry || '',
+            dropZipcode: b.dropZipcode || '',
+            flightNumber: b.flightNumber || '',
+            startKm: b.startKm || '',
+            endKm: b.endKm || '',
+            distanceTravelledByCar: b.distanceTravelledByCar || '',
+            amountAED: b.amountAED || '',
+            chargeable: b.chargeable || '',
+            secondPickupAmount: b.secondPickupAmount || '',
+            secondPickupCharged: b.secondPickupCharged || '',
+            remarks: b.remarks || ''
+        }));
+
+        const ws = xlsx.utils.json_to_sheet(dataForCsv);
+        const csvString = xlsx.utils.sheet_to_csv(ws);
+
+        let filename = `Export_${type}_${value}`;
+        if (status) filename += `_${status.replace(/\s+/g, '-')}`;
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+        res.status(200).send(csvString);
+    } catch (err) {
+        console.error("Export Error:", err);
+        res.status(500).json({ error: "Failed to generate export." });
+    }
+});
+
 // Search Pipeline Query Ingest Route
 router.post('/api/bookings/filter', requireAuth, async (req, res) => {
     try {
@@ -384,29 +578,71 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
         const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: false, raw: false });
         const rawRows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
+        // Normalize all column headers: lowercase + remove spaces for robust matching
         const normalizedRows = rawRows.map(row => {
             const cleanRow = {};
             for (const key in row) {
-                const cleanKey = key.trim().replace(/\s+/g, ' ');
-                cleanRow[cleanKey] = row[key];
+                const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
+                cleanRow[normalizedKey] = row[key];
             }
             return cleanRow;
         });
 
+        // Map of normalized column header -> Booking schema field name
+        // Add new column aliases here as needed without touching parsing logic
+        const COLUMN_MAP = {
+            'bookingid':        'bookingId',
+            'pickupdate':       'pickUpDate',
+            'pickuptime':       'pickUpTime',
+            'pickupaddress':    'pickupAddress',
+            'dropaddress':      'dropAddress',
+            'cartype':          'carType',
+            'distance(km)':     'distanceKm',
+            'distancekm':       'distanceKm',
+            'noofluggages':     'noOfLuggages',
+            'noofpassengers':   'noOfPassengers',
+            'noofluggage':      'noOfLuggages',
+            'noofpassenger':    'noOfPassengers',
+            'noofinfant':       'noOfInfants',
+            'noofinfants':      'noOfInfants',
+            'noofbaby':         'noOfBaby',
+            'flightnumber':     'flightNumber',
+            'customername':     'customerName',
+            'customermobile':   'customerMobile',
+            'number':           'customerMobile',
+            'customernumber':   'customerMobile',
+            'pickupregion':     'pickUpRegion',
+            'pickupcountry':    'pickUpCountry',
+            'pickupzipcode':    'pickUpZipcode',
+            'dropregion':       'dropRegion',
+            'dropcountry':      'dropCountry',
+            'dropzipcode':      'dropZipcode',
+            'vendorname':       'vendorName',
+            'carnumber':        'carNumber',
+            'status':           'status',
+            'remarks':          'remarks',
+            'chauffeurname':    'chauffeurName',
+            'chauffeur':        'chauffeurName',
+            'chauffeurphone':   'chauffeurPhone',
+            'chauffeurnumber':  'chauffeurPhone',
+        };
+
         let count = 0;
         const warnings = [];
         for (const row of normalizedRows) {
-            const bId = row["Booking ID"];
+            // Use normalized 'bookingid' key for lookup
+            const bId = row['bookingid'];
             if (bId) {
-                const pickupAddress = row["Pickup Address"] || "—";
-                const dropAddress = row["Drop Address"] || "—";
-                const distanceKm = parseFloat(row["Distance(KM)"]) || 0;
-                const trimmedId = String(bId).trim();
-                 if (distanceKm === 0) {
+                const pickupAddress = row['pickupaddress'] ? String(row['pickupaddress']).trim() : "—";
+                const dropAddress   = row['dropaddress']   ? String(row['dropaddress']).trim()   : "—";
+                const distanceKm    = parseFloat(row['distance(km)'] ?? row['distancekm']) || 0;
+                const trimmedId     = String(bId).trim();
+
+                if (distanceKm === 0) {
                     warnings.push(`Booking ${trimmedId} has a distance of 0 KM.`);
                 }
                 if (
-                    pickupAddress.toLowerCase().includes('abu dhabi') || 
+                    pickupAddress.toLowerCase().includes('abu dhabi') ||
                     dropAddress.toLowerCase().includes('abu dhabi')
                 ) {
                     warnings.push(`Booking ${trimmedId} contains no Abu Dhabi in the address.`);
@@ -415,48 +651,55 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
                 const existingDoc = await Booking.findOne({ bookingId: trimmedId });
                 const isNew = !existingDoc;
 
+                // Computed fields (derived, not taken directly from columns)
                 const serviceType = getServiceType(pickupAddress, dropAddress);
-                const zone = getZoneForDistance(distanceKm);
+                const zone        = getZoneForDistance(distanceKm);
 
                 let amountAED = 0;
                 const rate = ratesMap[zone];
                 if (rate) {
-                    if (serviceType === 'Pickup') {
-                        amountAED = rate.pickupAmount;
-                    } else if (serviceType === 'Drop') {
-                        amountAED = rate.dropAmount;
-                    }
+                    if (serviceType === 'Pickup') amountAED = rate.pickupAmount;
+                    else if (serviceType === 'Drop') amountAED = rate.dropAmount;
                 }
 
                 const capitalizedModel = model ? capitalizeWords(model.trim()) : '—';
+
+                // --- Dynamic attribute extraction ---
+                // Start with fixed/computed values that override any column data
                 const newValues = {
-                    bookingId: trimmedId,
-                    clientName: clientName,
-                    model: capitalizedModel,
-                    pickUpDate: parseExcelDate(row["Pick Up Date"]),
-                    pickUpTime: parseExcelTime(row["Pick Up Time"]),
-                    pickupAddress: pickupAddress,
-                    dropAddress: dropAddress,
-                    carType: row["Car Type"] || "—",
-                    distanceKm: distanceKm,
-                    noOfLuggages: parseInt(row["No of Luggages"]) || 0,
-                    noOfPassengers: parseInt(row["No of Passengers"]) || 0,
-                    noOfInfants: parseInt(row["No of Infant"]) || 0,
-                    noOfBaby: parseInt(row["No of Baby"]) || 0,
-                    flightNumber: row["Flight Number"] || "—",
-                    serviceType: serviceType,
-                    zone: zone,
-                    amountAED: amountAED,
+                    bookingId:     trimmedId,
+                    clientName:    clientName,
+                    model:         capitalizedModel,
+                    serviceType:   serviceType,
+                    zone:          zone,
+                    amountAED:     amountAED,
                     bookingSource: "Portal",
-                    customerName: row["Customer Name"] ? String(row["Customer Name"]).trim() : "—",
-                    customerMobile: row["Customer Mobile"] ? String(row["Customer Mobile"]).trim() : "—",
-                    pickUpRegion: row["Pick Up Region"] ? String(row["Pick Up Region"]).trim() : "—",
-                    pickUpCountry: row["Pick Up Country"] ? String(row["Pick Up Country"]).trim() : "—",
-                    pickUpZipcode: row["Pick Up Zipcode"] ? String(row["Pick Up Zipcode"]).trim() : "—",
-                    dropRegion: row["Drop Region"] ? String(row["Drop Region"]).trim() : "—",
-                    dropCountry: row["Drop Country"] ? String(row["Drop Country"]).trim() : "—",
-                    dropZipcode: row["Drop Zipcode"] ? String(row["Drop Zipcode"]).trim() : "—"
+                    // Specially handled columns (need type conversion or formatting)
+                    pickUpDate:    parseExcelDate(row['pickupdate']),
+                    pickUpTime:    parseExcelTime(row['pickuptime']),
+                    distanceKm:    distanceKm,
+                    pickupAddress: pickupAddress,
+                    dropAddress:   dropAddress,
                 };
+
+                // Fields that need integer parsing
+                const intFields = new Set(['noOfLuggages', 'noOfPassengers', 'noOfInfants', 'noOfBaby']);
+
+                // Dynamically map all remaining columns in the file to schema fields
+                for (const [normalizedHeader, schemaField] of Object.entries(COLUMN_MAP)) {
+                    // Skip fields already set above (computed or specially handled)
+                    if (newValues[schemaField] !== undefined) continue;
+                    if (!(normalizedHeader in row)) continue;
+
+                    const rawVal = row[normalizedHeader];
+                    if (intFields.has(schemaField)) {
+                        newValues[schemaField] = parseInt(rawVal) || 0;
+                    } else {
+                        newValues[schemaField] = rawVal !== undefined && rawVal !== null
+                            ? String(rawVal).trim() || "—"
+                            : "—";
+                    }
+                }
 
                 let changesMade = {};
                 if (!isNew) {

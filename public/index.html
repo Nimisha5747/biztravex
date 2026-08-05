@@ -107,7 +107,22 @@
             color: #166534;
         }
 
-        .badge-cancelled {
+        .badge-cancelled-noshow {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .badge-cancelled-free {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .badge-service-failure {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-waiver {
             background: #fee2e2;
             color: #991b1b;
         }
@@ -129,6 +144,161 @@
             background: #cbd5e1;
             border-radius: 4px;
         }
+
+        /* ── KPI summary widget row ── */
+        .summary-card {
+            background: white;
+            border: 1px solid #e7e5e4;
+            border-top: 3px solid var(--accent, #3b82f6);
+            border-radius: 14px;
+            padding: 12px 14px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        .summary-count {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent, #1e3a8a);
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+        .summary-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #78716c;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.35;
+        }
+        /* Status-style: solid chip colour, white text, count-only */
+        .summary-card-status {
+            background: var(--status-bg, #e2e8f0);
+            border: none;
+            border-radius: 14px;
+            padding: 12px 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .summary-card-status:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            filter: brightness(1.06);
+        }
+        .summary-card-status .summary-count {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+        .summary-card-status .summary-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.82);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        /* ── Section heading dividers ── */
+        .section-divider {
+            margin: 8px 0 0 0;
+        }
+        .section-divider-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 6px;
+        }
+        .section-divider-line {
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, #c7d2fe 0%, #e0e7ff 55%, transparent 100%);
+            border-radius: 2px;
+        }
+        .section-divider-title {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            white-space: nowrap;
+        }
+        .today-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .today-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+            filter: brightness(1.08);
+        }
+        .today-chip:active {
+            transform: translateY(0);
+        }
+        .chip-completed {
+            background: #16a34a;
+            color: #ffffff;
+            border-color: #15803d;
+        }
+        .chip-cancelled-noshow {
+            background: #ea580c;
+            color: #ffffff;
+            border-color: #c2410c;
+        }
+        .chip-cancelled-free {
+            background: #eab308;
+            color: #ffffff;
+            border-color: #ca8a04;
+        }
+        .chip-service-failure {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #1d4ed8;
+        }
+        .chip-waiver {
+            background: #f87171;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        .chip-default {
+            background: #e2e8f0;
+            color: #1e3a8a;
+            border-color: #cbd5e1;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -141,6 +311,10 @@
                 <span class="font-extrabold tracking-tight text-lg text-white">BizTravex</span>
             </div>
             <div class="flex items-center gap-2">
+                <button onclick="openExportModal()"
+                    class="text-xs font-semibold text-blue-100 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition">Export</button>
+                <button onclick="openAdminsModal()"
+                    class="text-xs font-semibold text-blue-100 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition">Manage Admins</button>
                 <a href="/chauffeur/admin/dashboard.html"
                     class="text-xs font-semibold text-blue-100 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition">Chauffeur Admin Panel</a>
                 <button onclick="openZoneModal()"
@@ -168,6 +342,50 @@
             </button>
         </header>
 
+        <!-- ── KPI Summary Widget Row ── -->
+        <div id="summary-widget-row" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3">
+            <!-- Today's Bookings -->
+            <div class="summary-card" style="--accent:#3b82f6">
+                <span class="summary-count" id="sw-total">—</span>
+                <span class="summary-label">Today's Bookings</span>
+            </div>
+            <!-- Completed -->
+            <div class="summary-card" style="--accent:#16a34a">
+                <span class="summary-count" id="sw-completed">—</span>
+                <span class="summary-label">Completed</span>
+            </div>
+            <!-- Cancelled - No Show (orange, matches chip-cancelled-noshow) -->
+            <div class="summary-card" style="--accent:#ea580c">
+                <span class="summary-count" id="sw-cancelled-noshow">—</span>
+                <span class="summary-label">Cancelled<br>No Show</span>
+            </div>
+            <!-- Cancelled - Free Cancellation (yellow, matches chip-cancelled-free) -->
+            <div class="summary-card" style="--accent:#ca8a04">
+                <span class="summary-count" id="sw-cancelled-free">—</span>
+                <span class="summary-label">Cancelled<br>Free Cancellation</span>
+            </div>
+            <!-- Service Failure (blue, matches chip-service-failure) -->
+            <div class="summary-card" style="--accent:#2563eb">
+                <span class="summary-count" id="sw-servicefailure">—</span>
+                <span class="summary-label">Service Failure</span>
+            </div>
+            <!-- Waiver (red-pink, matches chip-waiver) -->
+            <div class="summary-card" style="--accent:#ef4444">
+                <span class="summary-count" id="sw-waiver">—</span>
+                <span class="summary-label">Waiver</span>
+            </div>
+            <!-- Pending Today -->
+            <div class="summary-card" style="--accent:#f59e0b">
+                <span class="summary-count" id="sw-pending-today">—</span>
+                <span class="summary-label">Pending Chauffeur<br><span class="text-[9px] font-semibold text-stone-400 uppercase tracking-wide">Today</span></span>
+            </div>
+            <!-- Pending Tomorrow -->
+            <div class="summary-card" style="--accent:#d97706">
+                <span class="summary-count" id="sw-pending-tomorrow">—</span>
+                <span class="summary-label">Pending Chauffeur<br><span class="text-[9px] font-semibold text-stone-400 uppercase tracking-wide">Tomorrow</span></span>
+            </div>
+        </div>
+
         <!-- Alert Display Area -->
         <div id="alerts-container" class="hidden space-y-3"></div>
 
@@ -176,8 +394,8 @@
 
             <!-- Data Import -->
             <section
-                class="lg:col-span-1 bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60 flex flex-col justify-between">
-                <div>
+                class="lg:col-span-3 bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60">
+
                     <h2 class="text-sm font-bold text-blue-900 mb-3 border-b-2 border-blue-100 pb-2 inline-block">Data
                         Import</h2>
                     <div class="space-y-4">
@@ -185,9 +403,9 @@
                             <label
                                 class="block text-xs font-semibold text-blue-800 mb-1.5 uppercase tracking-wide">Client
                                 Dump</label>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-5">
                                 <input type="file" id="upload-dump" accept=".xlsx,.xls"
-                                    class="block w-full text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                                    class="block text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                                 <button onclick="processUpload('dump')"
                                     class="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 hover:text-indigo-800 transition-colors shrink-0 shadow-sm">Import</button>
                             </div>
@@ -201,66 +419,246 @@
                             </div>
                             <div class="flex items-center gap-2 mt-2">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Client Name:</label>
-                                <input type="text" id="upload-client" placeholder="e.g. Thriwe" required class="text-stone-700 text-xs border border-stone-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:border-blue-500 w-36">
+                                <select id="upload-client-select" onchange="handleClientNameChange()" required class="text-stone-700 text-xs border border-stone-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:border-blue-500 w-36">
+                                    <option value="">-- Client Name --</option>
+                                    <option value="Thriwe">Thriwe</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                                <input type="text" id="upload-client" value="" placeholder="Client Name" required class="hidden text-stone-700 text-xs border border-stone-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:border-blue-500 w-36">
                             </div>
                         </div>
                         <div class="pt-2 border-t border-stone-100">
                             <label
                                 class="block text-xs font-semibold text-blue-800 mb-1.5 uppercase tracking-wide">Vendor
                                 File</label>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-5">
                                 <input type="file" id="upload-vendor" accept=".xlsx,.xls"
-                                    class="block w-full text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                                    class="block text-[11px] text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                                 <button onclick="processUpload('vendor')"
                                     class="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 hover:text-indigo-800 transition-colors shrink-0 shadow-sm">Import</button>
                             </div>
                         </div>
                     </div>
-                </div>
             </section>
 
-            <!-- Search & Filters -->
-            <section
-                class="lg:col-span-2 bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-sm font-bold text-blue-900 mb-3 border-b-2 border-blue-100 pb-2 inline-block">Search
-                        & Filters</h2>
-                    <div class="flex flex-wrap items-center gap-4 mb-4 text-xs">
-                        <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
-                            <input type="checkbox" value="bookingId" onchange="toggleFilterInputVisibility(this)"
-                                class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
-                            Booking ID
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
-                            <input type="checkbox" value="pickUpDate" onchange="toggleFilterInputVisibility(this)"
-                                class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
-                            Date
-                        </label>
-                    </div>
-                    <div id="active-inputs-bar" class="hidden">
-                        <div id="inputs-container" class="flex flex-wrap items-end gap-4"></div>
-                        <div class="mt-4 pt-4 border-t border-stone-100">
-                            <button onclick="executeFilteredSearchPipeline()"
-                                class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
-                                Apply Filters
-                            </button>
-                        </div>
-                    </div>
-                    <div id="no-filters-msg" class="text-xs text-stone-400 italic">Select filters above to begin
-                        searching.</div>
-                </div>
-            </section>
         </div>
 
-        <!-- Bookings List -->
+        <!-- ══ TODAY'S BOOKINGS SECTION ══ -->
+        <div class="section-divider mt-2">
+            <div class="section-divider-header">
+                <span class="section-divider-title">Today's Bookings</span>
+                <!-- Color Legend -->
+                <div class="flex items-center gap-4 shrink-0 flex-wrap justify-end">
+                    <div class="flex items-center gap-1.5">
+                        <span class="legend-dot" style="background:#16a34a"></span>
+                        <span class="text-[10px] font-semibold text-stone-500 uppercase tracking-wide">Completed</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="legend-dot" style="background:#ea580c"></span>
+                        <span class="text-[10px] font-semibold text-stone-500 uppercase tracking-wide">Cancelled-No Show</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="legend-dot" style="background:#eab308"></span>
+                        <span class="text-[10px] font-semibold text-stone-500 uppercase tracking-wide">Cancelled-Free</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="legend-dot" style="background:#2563eb"></span>
+                        <span class="text-[10px] font-semibold text-stone-500 uppercase tracking-wide">Service Failure</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="legend-dot" style="background:#f87171"></span>
+                        <span class="text-[10px] font-semibold text-stone-500 uppercase tracking-wide">Waiver</span>
+                    </div>
+                </div>
+            </div>
+            <div class="section-divider-line"></div>
+        </div>
+
+        <!-- Today's Booking Chips -->
+        <section class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 px-5 py-4 min-h-[72px] flex items-center">
+            <div id="today-chips-container" class="flex flex-wrap gap-2 items-center w-full">
+                <span class="text-xs text-stone-400 italic">Loading today's bookings…</span>
+            </div>
+        </section>
+
+        <!-- ══ PENDING CHAUFFEUR ASSIGNMENTS SECTION ══ -->
+        <div class="section-divider mt-2">
+            <div class="section-divider-header">
+                <span class="section-divider-title">Pending Chauffeur Assignments</span>
+            </div>
+            <div class="section-divider-line"></div>
+        </div>
+
+        <section class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 px-5 py-4 min-h-[72px] flex flex-col gap-4">
+            <div>
+                <h3 class="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-2">Today</h3>
+                <div id="pending-today-container" class="flex flex-wrap gap-2 items-center w-full">
+                    <span class="text-xs text-stone-400 italic">Loading...</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-2">Tomorrow</h3>
+                <div id="pending-tomorrow-container" class="flex flex-wrap gap-2 items-center w-full">
+                    <span class="text-xs text-stone-400 italic">Loading...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ DETAILS SECTION ══ -->
+        <div class="section-divider mt-2">
+            <div class="section-divider-header">
+                <span class="section-divider-title">Details & Updation</span>
+            </div>
+            <div class="section-divider-line"></div>
+        </div>
+
+        <!-- Search & Filters (moved here, under Details) -->
+        <section class="bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-100/50 border border-white/60">
+            <h2 class="text-sm font-bold text-blue-900 mb-3 border-b-2 border-blue-100 pb-2 inline-block">Search &amp; Filters</h2>
+            <div class="flex flex-wrap items-center gap-4 mb-4 text-xs">
+                <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
+                    <input type="checkbox" value="bookingId" onchange="toggleFilterInputVisibility(this)"
+                        class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
+                    Booking ID
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-stone-600 font-medium select-none">
+                    <input type="checkbox" value="pickUpDate" onchange="toggleFilterInputVisibility(this)"
+                        class="w-4 h-4 rounded text-blue-600 border-stone-300 focus:ring-blue-500">
+                    Date
+                </label>
+            </div>
+            <div id="active-inputs-bar" class="hidden">
+                <div id="inputs-container" class="flex flex-wrap items-end gap-4"></div>
+                <div class="mt-4 pt-4 border-t border-stone-100">
+                    <button onclick="executeFilteredSearchPipeline()"
+                        class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+            <div id="no-filters-msg" class="text-xs text-stone-400 italic">Select filters above to begin searching.</div>
+        </section>
+
+        <!-- Bookings Widget List -->
         <main class="space-y-4">
             <div id="widget-list-container" class="space-y-3">
-                <div
-                    class="bg-white p-6 text-center text-xs text-stone-400 border border-stone-200 rounded-xl shadow-sm">
+                <div class="bg-white p-6 text-center text-xs text-stone-400 border border-stone-200 rounded-xl shadow-sm">
                     Select parameters or import spreadsheets to view bookings.
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- MANAGE ADMINS MODAL -->
+    <div id="admins-modal"
+        class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-5 border-b border-stone-100 flex justify-between items-center bg-white">
+                <h2 class="text-base font-bold text-stone-900">Manage Admins</h2>
+                <button onclick="closeAdminsModal()"
+                    class="text-stone-400 hover:text-stone-700 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 text-xs space-y-5 custom-scrollbar">
+                <!-- Add Admin Form -->
+                <div class="bg-stone-50 rounded-xl border border-stone-200 p-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-3">Add New Admin</h3>
+                    <div id="admin-form-error" class="hidden mb-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1 text-stone-700 text-xs uppercase tracking-wide">Name</label>
+                            <input type="text" id="admin-name" placeholder="Full name"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-stone-700 text-xs uppercase tracking-wide">Email</label>
+                            <input type="email" id="admin-email" placeholder="admin@example.com"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block font-semibold mb-1 text-stone-700 text-xs uppercase tracking-wide">Password <span class="text-stone-400 font-normal normal-case">(min 8 chars)</span></label>
+                            <input type="password" id="admin-password" placeholder="••••••••" minlength="8"
+                                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button onclick="addAdmin()"
+                            class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                            Add Admin
+                        </button>
+                    </div>
+                </div>
+                <!-- Existing Admins List -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-3">Existing Admins</h3>
+                    <div id="admins-list" class="space-y-2">
+                        <p class="text-stone-400 italic text-center py-6 text-xs">Loading admins...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXPORT MODAL -->
+    <div id="export-modal"
+        class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden">
+            <div class="px-6 py-5 border-b border-stone-100 flex justify-between items-center">
+                <h2 class="text-base font-bold text-stone-900">Export Bookings</h2>
+                <button onclick="closeExportModal()" class="text-stone-400 hover:text-stone-700 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-5 text-xs">
+                <!-- Time Filter -->
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-3">Filter By</p>
+                    <div class="flex gap-4 flex-wrap">
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-stone-700">
+                            <input type="radio" name="exp-filter-type" value="date" id="exp-by-date" onchange="onExportFilterChange()" class="accent-blue-600">
+                            Date
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-stone-700">
+                            <input type="radio" name="exp-filter-type" value="month" id="exp-by-month" onchange="onExportFilterChange()" class="accent-blue-600">
+                            Month
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-stone-700">
+                            <input type="radio" name="exp-filter-type" value="year" id="exp-by-year" onchange="onExportFilterChange()" class="accent-blue-600">
+                            Year
+                        </label>
+                    </div>
+                    <!-- Dynamic date input -->
+                    <div id="exp-input-area" class="mt-3">
+                        <input type="date" id="exp-date-val"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hidden">
+                        <input type="month" id="exp-month-val"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hidden">
+                        <input type="number" id="exp-year-val" placeholder="e.g. 2025" min="2020" max="2099"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hidden">
+                    </div>
+                </div>
+                <!-- Status -->
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-widest text-blue-900 mb-2 block">Booking Status</label>
+                    <select id="exp-status"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <option value="">-- All Statuses --</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled-No Show">Cancelled - No Show</option>
+                        <option value="Cancelled-Free Cancellation">Cancelled - Free Cancellation</option>
+                        <option value="Service Failure">Service Failure</option>
+                        <option value="Waiver">Waiver</option>
+                    </select>
+                </div>
+                <!-- Error -->
+                <div id="exp-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs"></div>
+            </div>
+            <div class="px-6 pb-6 flex justify-end gap-3">
+                <button onclick="closeExportModal()"
+                    class="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-800 rounded-xl hover:bg-stone-100 transition">Cancel</button>
+                <button onclick="handleExport()" id="exp-btn"
+                    class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 shadow-md shadow-blue-500/20">
+                    Export CSV
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- MANUAL BOOKING MODAL -->
@@ -524,6 +922,17 @@
         let filterClickOrder = [];
         let isInitialRestore = false;
 
+        // ── Privileged admin check ────────────────────────────────────────────────────
+        // REPLACE 'xyz@example.com' with the actual privileged email (must match auth.js).
+        const SUPER_ADMIN_EMAIL = 'xyz@example.com'; // <-- replace here
+        let currentUserEmail = '';
+        try {
+            // Decode the JWT payload (base64) to get the logged-in user's email
+            const tokenPayload = JSON.parse(atob(authToken.split('.')[1]));
+            currentUserEmail = (tokenPayload.email || '').toLowerCase().trim();
+        } catch (e) { /* token unavailable on this load */ }
+        // ─────────────────────────────────────────────────────────────────────────────
+
         const UPDATABLE_FIELDS = [
             { value: 'status', label: 'Status' },
             { value: 'model', label: 'Model Type' },
@@ -629,10 +1038,12 @@
 
             container.innerHTML = liveLoadedWidgetsDataset.map((row, idx) => {
                 const statusClass =
-                    row.status === 'Ride In Progress' ? 'badge-inprogress' :
-                        row.status === 'Completed' ? 'badge-completed' :
-                            row.status === 'Cancelled' ? 'badge-cancelled' :
-                                row.status === 'Upcoming' ? 'badge-upcoming' : 'badge-notset';
+                    row.status === 'completed' ? 'badge-completed' :
+                        row.status === 'cancelled-no show' ? 'badge-cancelled-noshow' :
+                            row.status === 'cancelled-free cancellation' ? 'badge-cancelled-free' :
+                                row.status === 'service failure' ? 'badge-service-failure' :
+                                    row.status === 'waiver' ? 'badge-waiver' :
+                                        'badge-notset';
 
                 const hiddenFields = ['_id', '__v', 'createdAt', 'updatedAt', 'uploadedAt', 'updates', 'startKm', 'remarks', 'pickUpZipcode', 'pickUpRegion', 'pickUpCountry', 'endKm', 'dropRegion', 'dropCountry', 'dropZipcode', 'distanceTravelledByCar', 'bookingId', 'chauffeurName', 'flightNumber', 'pickUpDate', 'pickUpTime', 'status'];
                 const infoCells = Object.keys(row)
@@ -717,9 +1128,11 @@
                                                 <select id="upd-status-select-${idx}" class="upd-input hidden" onchange="handleStatusSelectChange(this, ${idx})">
                                                     <option value="">-- Select Status --</option>
                                                     <option value="Not set">Not set</option>
-                                                    <option value="Completed">Completed</option>
-                                                    <option value="Cancelled">Cancelled</option>
-                                                    <option value="No-show">No-show</option>
+                                                    <option value="completed">completed</option>
+                                                    <option value="cancelled-free cancellation">cancelled-free cancellation</option>
+                                                    <option value="cancelled-no show">cancelled-no show</option>
+                                                    <option value="waiver">waiver</option>
+                                                    <option value="service failure">service failure</option>
                                                     <option value="other">Other (write custom status)</option>
                                                 </select>
                                                 <select id="upd-model-select-${idx}" class="upd-input hidden" onchange="handleModelSelectChange(this, ${idx})">
@@ -933,7 +1346,24 @@
                         doc.chauffeurPhone = chauffeurPhone;
                     }
                     liveLoadedWidgetsDataset[idx] = doc;
+
+                    if (field === 'chauffeurName') {
+                        if (typeof loadPendingChauffeurBookings === 'function') loadPendingChauffeurBookings();
+                    }
+
+                    // Instantly recolor the today-chip for this booking if status changed
+                    if (field === 'status') {
+                        const allChips = document.querySelectorAll('#today-chips-container .today-chip');
+                        allChips.forEach(chip => {
+                            if (chip.getAttribute('onclick') === `selectTodayBooking('${bookingId}')`) {
+                                chip.classList.remove('chip-completed', 'chip-cancelled-noshow', 'chip-cancelled-free', 'chip-service-failure', 'chip-waiver', 'chip-default');
+                                chip.classList.add(getTodayChipClass(value));
+                            }
+                        });
+                    }
+
                     await loadAuditLog(idx, bookingId);
+
 
                     const btn = document.querySelector(`#expand-panel-${idx} button[onclick^="submitFieldUpdate"]`);
                     const orig = btn.textContent;
@@ -1058,45 +1488,14 @@
                 inputEl.value = '';
                 inputEl.placeholder = 'Enter custom status';
                 inputEl.focus();
-
-                // Show default reason input
-                if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
-                if (reasonInputEl) reasonInputEl.classList.remove('hidden');
             } else {
                 inputEl.classList.add('hidden');
                 inputEl.value = val;
-
-                if (val === 'Cancelled') {
-                    if (reasonInputEl) reasonInputEl.classList.add('hidden');
-                    if (reasonSelectEl) {
-                        reasonSelectEl.classList.remove('hidden');
-                        reasonSelectEl.innerHTML = `
-                            <option value="">-- Select Reason --</option>
-                            <option value="Cancelled by client">Cancelled by client</option>
-                            <option value="Cancelled by vendor">Cancelled by vendor</option>
-                            <option value="Cancelled by customer more than 12 hrs prior">Cancelled by customer more than 12 hrs prior</option>
-                            <option value="cancelled by client">cancelled by client</option>
-                            <option value="cancelled by vendor">cancelled by vendor</option>
-                            <option value="other">Other (write custom reason)</option>
-                        `;
-                    }
-                } else if (val === 'No-show') {
-                    if (reasonInputEl) reasonInputEl.classList.add('hidden');
-                    if (reasonSelectEl) {
-                        reasonSelectEl.classList.remove('hidden');
-                        reasonSelectEl.innerHTML = `
-                            <option value="">-- Select Reason --</option>
-                            <option value="cancelled by customer within 12 hrs">cancelled by customer within 12 hrs</option>
-                            <option value="No response">No response</option>
-                            <option value="other">Other (write custom reason)</option>
-                        `;
-                    }
-                } else {
-                    // Completed or other selection
-                    if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
-                    if (reasonInputEl) reasonInputEl.classList.remove('hidden');
-                }
             }
+
+            // Always just show the text reason input, hide the select
+            if (reasonSelectEl) reasonSelectEl.classList.add('hidden');
+            if (reasonInputEl) reasonInputEl.classList.remove('hidden');
         };
 
         window.handleReasonSelectChange = function(reasonSelectEl, idx) {
@@ -1186,6 +1585,20 @@
             }
         }
 
+        function handleClientNameChange() {
+            const selectEl = document.getElementById('upload-client-select');
+            const inputEl = document.getElementById('upload-client');
+            
+            if (selectEl.value === 'custom') {
+                selectEl.classList.add('hidden');
+                inputEl.classList.remove('hidden');
+                inputEl.value = '';
+                inputEl.focus();
+            } else {
+                inputEl.value = selectEl.value;
+            }
+        }
+
         async function processUpload(type) {
             const input = document.getElementById(`upload-${type}`);
             if (input.files.length === 0) return alert('Select a spreadsheet file first.');
@@ -1224,6 +1637,7 @@
                     const clientInput = document.getElementById('upload-client');
                     if (clientInput) clientInput.value = '';
                     if (liveLoadedWidgetsDataset.length > 0) executeFilteredSearchPipeline();
+                    if (typeof loadPendingChauffeurBookings === 'function') loadPendingChauffeurBookings();
                 } else {
                     const err = await response.json().catch(() => ({}));
                     alert('Upload failed: ' + (err.error || 'Unknown error'));
@@ -1519,6 +1933,7 @@
                     closeManualModal();
                     document.querySelectorAll('#manual-modal input:not([type="date"])').forEach(i => i.value = '');
                     if (liveLoadedWidgetsDataset.length > 0) executeFilteredSearchPipeline();
+                    if (typeof loadPendingChauffeurBookings === 'function') loadPendingChauffeurBookings();
                 } else { alert('Failed to create booking.'); }
             } catch (err) { alert('Network error. Could not create booking.'); }
         }
@@ -1537,8 +1952,328 @@
             }
         }
 
+        // ── Admin User Management ────────────────────────────────────────
+
+        function openAdminsModal() {
+            document.getElementById('admins-modal').classList.remove('hidden');
+            loadAdmins();
+        }
+        function closeAdminsModal() {
+            document.getElementById('admins-modal').classList.add('hidden');
+            document.getElementById('admin-name').value = '';
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-form-error').classList.add('hidden');
+        }
+
+        async function loadAdmins() {
+            const listEl = document.getElementById('admins-list');
+            listEl.innerHTML = '<p class="text-stone-400 italic text-center py-6 text-xs">Loading admins...</p>';
+            try {
+                const res = await authFetch('/api/admin/users');
+                const users = await res.json();
+                if (!users || users.length === 0) {
+                    listEl.innerHTML = '<p class="text-stone-400 italic text-center py-6 text-xs">No admin users found.</p>';
+                    return;
+                }
+                listEl.innerHTML = users.map(u => {
+                    const joined = new Date(u.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    // Only the privileged super-admin sees the Remove button
+                    const canDelete = currentUserEmail === SUPER_ADMIN_EMAIL;
+                    const removeBtn = canDelete
+                        ? `<button onclick="removeAdmin('${u._id}')"
+                               class="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition shrink-0 ml-3">
+                               Remove
+                           </button>`
+                        : '';
+                    return `
+                    <div class="flex items-center justify-between bg-white border border-stone-200 rounded-lg px-4 py-2.5 shadow-sm">
+                        <div>
+                            <p class="font-bold text-stone-900 text-xs">${u.name || '(No name)'} <span class="font-normal text-stone-500">&mdash; ${u.email}</span></p>
+                            <p class="text-stone-400 text-[10px] mt-0.5">Added ${joined}</p>
+                        </div>
+                        ${removeBtn}
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                listEl.innerHTML = '<p class="text-red-500 italic text-center py-6 text-xs">Failed to load admins.</p>';
+            }
+        }
+
+        async function addAdmin() {
+            const name  = document.getElementById('admin-name').value.trim();
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+            const errEl = document.getElementById('admin-form-error');
+            errEl.classList.add('hidden');
+
+            if (!email) { errEl.textContent = 'Email is required.'; errEl.classList.remove('hidden'); return; }
+            if (!password || password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.classList.remove('hidden'); return; }
+
+            try {
+                const res = await authFetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('admin-name').value = '';
+                    document.getElementById('admin-email').value = '';
+                    document.getElementById('admin-password').value = '';
+                    loadAdmins();
+                } else {
+                    errEl.textContent = data.error || 'Failed to add admin.';
+                    errEl.classList.remove('hidden');
+                }
+            } catch (e) {
+                errEl.textContent = 'Network error. Could not add admin.';
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        async function removeAdmin(id) {
+            if (!confirm('Remove this admin? They will lose all access immediately.')) return;
+            try {
+                const res = await authFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok) {
+                    loadAdmins();
+                } else {
+                    alert(data.error || 'Failed to remove admin.');
+                }
+            } catch (e) {
+                alert('Network error. Could not remove admin.');
+            }
+        }
+
+        // ── Export Modal Logic ─────────────────────────────────────────────────────
+
+        function openExportModal() {
+            document.getElementById('export-modal').classList.remove('hidden');
+            // Reset to defaults
+            document.getElementById('exp-by-date').checked = true;
+            onExportFilterChange();
+            document.getElementById('exp-status').value = '';
+            document.getElementById('exp-error').classList.add('hidden');
+            
+            // Set date to today
+            const now = new Date();
+            const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            document.getElementById('exp-date-val').value = dateStr;
+            const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('exp-month-val').value = monthStr;
+            document.getElementById('exp-year-val').value = now.getFullYear();
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        function onExportFilterChange() {
+            const type = document.querySelector('input[name="exp-filter-type"]:checked').value;
+            const dv = document.getElementById('exp-date-val');
+            const mv = document.getElementById('exp-month-val');
+            const yv = document.getElementById('exp-year-val');
+            
+            dv.classList.add('hidden');
+            mv.classList.add('hidden');
+            yv.classList.add('hidden');
+            
+            if (type === 'date') dv.classList.remove('hidden');
+            else if (type === 'month') mv.classList.remove('hidden');
+            else if (type === 'year') yv.classList.remove('hidden');
+        }
+
+        async function handleExport() {
+            const type = document.querySelector('input[name="exp-filter-type"]:checked').value;
+            let val = '';
+            if (type === 'date') val = document.getElementById('exp-date-val').value;
+            else if (type === 'month') val = document.getElementById('exp-month-val').value;
+            else if (type === 'year') val = document.getElementById('exp-year-val').value;
+            
+            const status = document.getElementById('exp-status').value;
+            const errEl = document.getElementById('exp-error');
+            errEl.classList.add('hidden');
+
+            if (!val) {
+                errEl.textContent = 'Please select a date, month, or year value.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('exp-btn');
+                const origText = btn.innerHTML;
+                btn.innerHTML = 'Exporting...';
+                btn.disabled = true;
+
+                const query = new URLSearchParams({ type, value: val });
+                if (status) query.append('status', status);
+
+                const res = await authFetch(`/api/bookings/export?${query.toString()}`);
+                
+                btn.innerHTML = origText;
+                btn.disabled = false;
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    errEl.textContent = data.error || 'Export failed.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+
+                // Download CSV
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                let filename = `Export_${type}_${val}`;
+                if (status) filename += `_${status.replace(/\s+/g, '-')}`;
+                a.download = `${filename}.csv`;
+                
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                closeExportModal();
+
+            } catch (e) {
+                console.error(e);
+                errEl.textContent = 'Network error during export.';
+                errEl.classList.remove('hidden');
+                const btn = document.getElementById('exp-btn');
+                btn.innerHTML = 'Export CSV';
+                btn.disabled = false;
+            }
+        }
+
+        // ── KPI Summary Widgets ────────────────────────────────────────────────────
+
+        async function loadSummaryWidgets() {
+            try {
+                const res = await authFetch('/api/bookings/summary');
+                if (!res.ok) return;
+                const d = await res.json();
+                const set = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val ?? 0;
+                };
+                set('sw-total',            d.totalToday);
+                set('sw-completed',        d.completed);
+                set('sw-cancelled-noshow', d.cancelledNoShow);
+                set('sw-cancelled-free',   d.cancelledFree);
+                set('sw-servicefailure',   d.serviceFailure);
+                set('sw-waiver',           d.waiver);
+                set('sw-pending-today',    d.pendingChauffeurToday);
+                set('sw-pending-tomorrow', d.pendingChauffeurTomorrow);
+            } catch (e) {
+                console.error('Failed to load summary widgets:', e);
+            }
+        }
+
+        // ── Today's Bookings chip logic ────────────────────────────────────────
+
+        async function loadTodayBookings() {
+            const container = document.getElementById('today-chips-container');
+            try {
+                const res = await authFetch('/api/bookings/today');
+                const bookings = await res.json();
+                renderTodayChips(bookings);
+            } catch (e) {
+                container.innerHTML = '<span class="text-xs text-red-400 italic">Failed to load today\'s bookings.</span>';
+            }
+        }
+
+        async function loadPendingChauffeurBookings() {
+            const containerToday = document.getElementById('pending-today-container');
+            const containerTomorrow = document.getElementById('pending-tomorrow-container');
+            try {
+                const res = await authFetch('/api/bookings/pending-chauffeur');
+                const data = await res.json();
+                renderPendingChips(data.today, containerToday, "No pending assignments for today.");
+                renderPendingChips(data.tomorrow, containerTomorrow, "No pending assignments for tomorrow.");
+            } catch (e) {
+                containerToday.innerHTML = '<span class="text-xs text-red-400 italic">Failed to load.</span>';
+                containerTomorrow.innerHTML = '<span class="text-xs text-red-400 italic">Failed to load.</span>';
+            }
+        }
+
+        function renderPendingChips(bookings, container, emptyMsg) {
+            if (!bookings || bookings.length === 0) {
+                container.innerHTML = `<span class="text-xs text-stone-400 italic">${emptyMsg}</span>`;
+                return;
+            }
+            container.innerHTML = bookings.map(b => {
+                const chipClass = 'chip-default';
+                const time = b.pickUpTime ? `<span style="opacity:0.75;font-size:10px;margin-left:5px;font-weight:600">${b.pickUpTime}</span>` : '';
+                return `<button class="today-chip ${chipClass}" onclick="selectTodayBooking('${b.bookingId}')" title="${b.customerName || ''} — ${b.clientName || ''}">${b.bookingId}${time}</button>`;
+            }).join('');
+        }
+
+        function getTodayChipClass(status) {
+            if (!status || status === '—') return 'chip-default';
+            const s = status.trim().toLowerCase();
+            if (s === 'completed') return 'chip-completed';
+            if (s === 'cancelled-no show') return 'chip-cancelled-noshow';
+            if (s === 'cancelled-free cancellation') return 'chip-cancelled-free';
+            if (s === 'service failure') return 'chip-service-failure';
+            if (s === 'waiver') return 'chip-waiver';
+            return 'chip-default';
+        }
+
+        function renderTodayChips(bookings) {
+            const container = document.getElementById('today-chips-container');
+            if (!bookings || bookings.length === 0) {
+                container.innerHTML = '<span class="text-xs text-stone-400 italic">No bookings scheduled for today.</span>';
+                return;
+            }
+            container.innerHTML = bookings.map(b => {
+                const chipClass = getTodayChipClass(b.status);
+                const time = b.pickUpTime ? `<span style="opacity:0.75;font-size:10px;margin-left:5px;font-weight:600">${b.pickUpTime}</span>` : '';
+                return `<button class="today-chip ${chipClass}" onclick="selectTodayBooking('${b.bookingId}')" title="${b.customerName || ''} — ${b.clientName || ''}">${b.bookingId}${time}</button>`;
+            }).join('');
+        }
+
+        async function selectTodayBooking(bookingId) {
+            // 1. Ensure the Booking ID checkbox is checked
+            const bidCheckbox = document.querySelector('input[type="checkbox"][value="bookingId"]');
+            if (bidCheckbox && !bidCheckbox.checked) {
+                bidCheckbox.checked = true;
+                toggleFilterInputVisibility(bidCheckbox);
+            }
+
+            // 2. Set the booking ID input value
+            const bidInput = document.getElementById('param-bookingId');
+            if (bidInput) {
+                bidInput.value = bookingId;
+                persistFilterState();
+            }
+
+            // 3. Execute search
+            await executeFilteredSearchPipeline();
+
+            // 4. Auto-open the first (and only) result
+            if (liveLoadedWidgetsDataset.length > 0) {
+                const targetIdx = liveLoadedWidgetsDataset.findIndex(r => r.bookingId === bookingId);
+                const idxToOpen = targetIdx !== -1 ? targetIdx : 0;
+
+                // Scroll to details section smoothly
+                const detailsSection = document.getElementById('widget-list-container');
+                if (detailsSection) detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Small delay for scroll, then open
+                setTimeout(() => toggleExpand(idxToOpen), 300);
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             loadGlobalChauffeurs();
+            loadSummaryWidgets();
+            loadTodayBookings();
+            loadPendingChauffeurBookings();
+
             let savedWarnings = [];
             try {
                 savedWarnings = JSON.parse(localStorage.getItem('importWarnings') || '[]');
@@ -1560,7 +2295,7 @@
                 const checkbox = document.querySelector(`input[type="checkbox"][value="${key}"]`);
                 if (checkbox) {
                     checkbox.checked = true;
-                    toggleFilterInputVisibility(checkbox); // creates the input + re-persists
+                    toggleFilterInputVisibility(checkbox);
 
                     const inputEl = document.getElementById(`param-${key}`);
                     if (inputEl && savedValues[key] !== undefined) {
@@ -1571,7 +2306,7 @@
             });
 
             if (hasActiveFilters) {
-                isInitialRestore = true;   // NEW: mark this as the refresh-restore call
+                isInitialRestore = true;
                 executeFilteredSearchPipeline();
             }
         });
