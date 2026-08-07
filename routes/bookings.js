@@ -437,8 +437,8 @@ router.post('/api/bookings/update', requireAuth, async (req, res) => {
 });
 
 // Ingest Master Spreadsheet Route
-router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "Payload sheet missing." });
+router.post('/api/bookings/upload-dump', requireAuth, upload.array('files'), async (req, res) => {
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: "Payload sheet missing." });
     try {
         const { model, clientName: bodyClientName } = req.body;
         if (!model || (model !== 'retail' && model !== 'rental')) {
@@ -448,60 +448,22 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
             return res.status(400).json({ error: "Client Name is required." });
         }
         const clientName = bodyClientName.trim();
-        const originalName = req.file.originalname;
-        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
-        // const fileNameMatch = nameWithoutExt.match(/^(.+?)_dump_(\d{1,2}-\d{1,2}|\d{1,2}[A-Za-z]{3})$/i);
-        // const clientName = fileNameMatch ? fileNameMatch[1].trim() : "Unknown";
-
-        const parseExcelDate = (val) => {
-            if (!val) return "—";
-            if (val instanceof Date && !isNaN(val)) {
-                const y = val.getFullYear();
-                const m = String(val.getMonth() + 1).padStart(2, '0');
-                const d = String(val.getDate()).padStart(2, '0');
-                return `${y}-${m}-${d}`;
-            }
-            if (typeof val === 'number') {
-                const date = new Date(Math.round((val - 25569) * 86400 * 1000));
-                if (!isNaN(date)) {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
+        
+        let totalCount = 0;
+        const allWarnings = [];
+        // Loop through all uploaded files
+        for (const file of req.files) {
+            const originalName = file.originalname;
+            const parseExcelDate = (val) => {
+                if (!val) return "—";
+                if (val instanceof Date && !isNaN(val)) {
+                    const y = val.getFullYear();
+                    const m = String(val.getMonth() + 1).padStart(2, '0');
+                    const d = String(val.getDate()).padStart(2, '0');
                     return `${y}-${m}-${d}`;
                 }
-            }
-            if (typeof val === 'string') {
-                const trimmed = val.trim();
-                const ddMmmMatch = trimmed.match(/^(\d{1,2})[-/]([A-Za-z]{3,9})$/);
-                if (ddMmmMatch) {
-                    const day = ddMmmMatch[1].padStart(2, '0');
-                    const monthName = ddMmmMatch[2].toLowerCase().substring(0, 3);
-                    const monthsMap = {
-                        jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-                        jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-                    };
-                    const month = monthsMap[monthName];
-                    if (month) {
-                        const currentYear = new Date().getFullYear();
-                        return `${currentYear}-${month}-${day}`;
-                    }
-                }
-                const mmmDdMatch = trimmed.match(/^([A-Za-z]{3,9})[-/](\d{1,2})$/);
-                if (mmmDdMatch) {
-                    const monthName = mmmDdMatch[1].toLowerCase().substring(0, 3);
-                    const day = mmmDdMatch[2].padStart(2, '0');
-                    const monthsMap = {
-                        jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
-                        jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
-                    };
-                    const month = monthsMap[monthName];
-                    if (month) {
-                        const currentYear = new Date().getFullYear();
-                        return `${currentYear}-${month}-${day}`;
-                    }
-                }
-                if (/^\d+(\.\d+)?$/.test(trimmed)) {
-                    const date = new Date(Math.round((parseFloat(trimmed) - 25569) * 86400 * 1000));
+                if (typeof val === 'number') {
+                    const date = new Date(Math.round((val - 25569) * 86400 * 1000));
                     if (!isNaN(date)) {
                         const y = date.getFullYear();
                         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -509,324 +471,372 @@ router.post('/api/bookings/upload-dump', requireAuth, upload.single('file'), asy
                         return `${y}-${m}-${d}`;
                     }
                 }
-                const ddmmyyyy = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-                if (ddmmyyyy) {
-                    const d = ddmmyyyy[1].padStart(2, '0');
-                    const m = ddmmyyyy[2].padStart(2, '0');
-                    const y = ddmmyyyy[3];
-                    return `${y}-${m}-${d}`;
-                }
-                const parsed = new Date(trimmed);
-                if (!isNaN(parsed)) {
-                    const y = parsed.getFullYear();
-                    const m = String(parsed.getMonth() + 1).padStart(2, '0');
-                    const d = String(parsed.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                }
-                return trimmed;
-            }
-            return String(val).trim();
-        };
-
-        const parseExcelTime = (val) => {
-            if (val === undefined || val === null || val === '') return "00:00";
-            if (val instanceof Date && !isNaN(val)) {
-                const timeStr = val.toLocaleTimeString('en-US', { hour12: false });
-                const parts = timeStr.split(':');
-                return `${parts[0]}:${parts[1]}`;
-            }
-            let num = typeof val === 'number' ? val : parseFloat(val);
-            if (!isNaN(num) && typeof val !== 'string' || (typeof val === 'string' && /^0?\.\d+$/.test(val.trim()))) {
-                const totalSeconds = Math.round(num * 24 * 60 * 60);
-                const hours = Math.floor(totalSeconds / 3600) % 24;
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const h = String(hours).padStart(2, '0');
-                const m = String(minutes).padStart(2, '0');
-                return `${h}:${m}`;
-            }
-            if (typeof val === 'string') {
-                const trimmed = val.trim();
-                if (/am|pm/i.test(trimmed)) {
-                    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)$/i);
-                    if (match) {
-                        let hours = parseInt(match[1], 10);
-                        const minutes = match[2];
-                        const ampm = match[4].toLowerCase();
-                        if (ampm === 'pm' && hours < 12) hours += 12;
-                        if (ampm === 'am' && hours === 12) hours = 0;
-                        return `${String(hours).padStart(2, '0')}:${minutes}`;
-                    }
-                }
-                return trimmed;
-            }
-            return "00:00";
-        };
-
-        const zones = await Zone.find({});
-        const getZoneForDistance = (km) => {
-            if (km <= 0) return "—";
-            const match = zones.find(z => km >= z.minKm && km <= z.maxKm);
-            return match ? match.name : "—";
-        };
-
-        const rates = await Rate.find({});
-        const ratesMap = {};
-        rates.forEach(r => {
-            ratesMap[r.zoneName.trim()] = r;
-        });
-
-        const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: false, raw: false });
-        const rawRows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-
-        // Normalize all column headers: lowercase + remove spaces for robust matching
-        const normalizedRows = rawRows.map(row => {
-            const cleanRow = {};
-            for (const key in row) {
-                const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
-                cleanRow[normalizedKey] = row[key];
-            }
-            return cleanRow;
-        });
-
-        // Map of normalized column header -> Booking schema field name
-        // Add new column aliases here as needed without touching parsing logic
-        const COLUMN_MAP = {
-            'bookingid':        'bookingId',
-            'pickupdate':       'pickUpDate',
-            'pickuptime':       'pickUpTime',
-            'pickupaddress':    'pickupAddress',
-            'dropaddress':      'dropAddress',
-            'cartype':          'carType',
-            'distance(km)':     'distanceKm',
-            'distancekm':       'distanceKm',
-            'noofluggages':     'noOfLuggages',
-            'noofpassengers':   'noOfPassengers',
-            'noofluggage':      'noOfLuggages',
-            'noofpassenger':    'noOfPassengers',
-            'noofinfant':       'noOfInfants',
-            'noofinfants':      'noOfInfants',
-            'noofbaby':         'noOfBaby',
-            'flightnumber':     'flightNumber',
-            'customername':     'customerName',
-            'customermobile':   'customerMobile',
-            'number':           'customerMobile',
-            'customernumber':   'customerMobile',
-            'pickupregion':     'pickUpRegion',
-            'pickupcountry':    'pickUpCountry',
-            'pickupzipcode':    'pickUpZipcode',
-            'dropregion':       'dropRegion',
-            'dropcountry':      'dropCountry',
-            'dropzipcode':      'dropZipcode',
-            'vendorname':       'vendorName',
-            'carnumber':        'carNumber',
-            'status':           'status',
-            'remarks':          'remarks',
-            'chauffeurname':    'chauffeurName',
-            'chauffeur':        'chauffeurName',
-            'chauffeurphone':   'chauffeurPhone',
-            'chauffeurnumber':  'chauffeurPhone',
-        };
-
-        let count = 0;
-        const warnings = [];
-        for (const row of normalizedRows) {
-            // Use normalized 'bookingid' key for lookup
-            const bId = row['bookingid'];
-            if (bId) {
-                const pickupAddress = row['pickupaddress'] ? String(row['pickupaddress']).trim() : "—";
-                const dropAddress   = row['dropaddress']   ? String(row['dropaddress']).trim()   : "—";
-                const distanceKm    = parseFloat(row['distance(km)'] ?? row['distancekm']) || 0;
-                const trimmedId     = String(bId).trim();
-
-                if (distanceKm === 0) {
-                    warnings.push(`Booking ${trimmedId} has a distance of 0 KM.`);
-                }
-                if (
-                    pickupAddress.toLowerCase().includes('abu dhabi') ||
-                    dropAddress.toLowerCase().includes('abu dhabi')
-                ) {
-                    warnings.push(`Booking ${trimmedId} contains no Abu Dhabi in the address.`);
-                }
-
-                const existingDoc = await Booking.findOne({ bookingId: trimmedId });
-                const isNew = !existingDoc;
-
-                // Computed fields (derived, not taken directly from columns)
-                const serviceType = getServiceType(pickupAddress, dropAddress);
-                const zone        = getZoneForDistance(distanceKm);
-
-                let amountAED = 0;
-                const rate = ratesMap[zone];
-                if (rate) {
-                    if (serviceType === 'Pickup') amountAED = rate.pickupAmount;
-                    else if (serviceType === 'Drop') amountAED = rate.dropAmount;
-                }
-
-                const capitalizedModel = model ? capitalizeWords(model.trim()) : '—';
-
-                // --- Dynamic attribute extraction ---
-                // Start with fixed/computed values that override any column data
-                const newValues = {
-                    bookingId:     trimmedId,
-                    clientName:    clientName,
-                    model:         capitalizedModel,
-                    serviceType:   serviceType,
-                    zone:          zone,
-                    amountAED:     amountAED,
-                    bookingSource: "Portal",
-                    // Specially handled columns (need type conversion or formatting)
-                    pickUpDate:    parseExcelDate(row['pickupdate']),
-                    pickUpTime:    parseExcelTime(row['pickuptime']),
-                    distanceKm:    distanceKm,
-                    pickupAddress: pickupAddress,
-                    dropAddress:   dropAddress,
-                };
-
-                // Fields that need integer parsing
-                const intFields = new Set(['noOfLuggages', 'noOfPassengers', 'noOfInfants', 'noOfBaby']);
-
-                // Dynamically map all remaining columns in the file to schema fields
-                for (const [normalizedHeader, schemaField] of Object.entries(COLUMN_MAP)) {
-                    // Skip fields already set above (computed or specially handled)
-                    if (newValues[schemaField] !== undefined) continue;
-                    if (!(normalizedHeader in row)) continue;
-
-                    const rawVal = row[normalizedHeader];
-                    if (intFields.has(schemaField)) {
-                        newValues[schemaField] = parseInt(rawVal) || 0;
-                    } else {
-                        newValues[schemaField] = rawVal !== undefined && rawVal !== null
-                            ? String(rawVal).trim() || "—"
-                            : "—";
-                    }
-                }
-
-                let changesMade = {};
-                if (!isNew) {
-                    for (const key of Object.keys(newValues)) {
-                        const oldVal = existingDoc[key];
-                        const newVal = newValues[key];
-                        const oldStr = oldVal === undefined || oldVal === null ? "" : String(oldVal);
-                        const newStr = newVal === undefined || newVal === null ? "" : String(newVal);
-                        if (oldStr !== newStr) {
-                            changesMade[key] = { old: oldVal ?? "—", new: newVal };
+                if (typeof val === 'string') {
+                    const trimmed = val.trim();
+                    const ddMmmMatch = trimmed.match(/^(\d{1,2})[-/]([A-Za-z]{3,9})$/);
+                    if (ddMmmMatch) {
+                        const day = ddMmmMatch[1].padStart(2, '0');
+                        const monthName = ddMmmMatch[2].toLowerCase().substring(0, 3);
+                        const monthsMap = {
+                            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+                            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+                        };
+                        const month = monthsMap[monthName];
+                        if (month) {
+                            const currentYear = new Date().getFullYear();
+                            return `${currentYear}-${month}-${day}`;
                         }
                     }
+                    const mmmDdMatch = trimmed.match(/^([A-Za-z]{3,9})[-/](\d{1,2})$/);
+                    if (mmmDdMatch) {
+                        const monthName = mmmDdMatch[1].toLowerCase().substring(0, 3);
+                        const day = mmmDdMatch[2].padStart(2, '0');
+                        const monthsMap = {
+                            jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+                            jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+                        };
+                        const month = monthsMap[monthName];
+                        if (month) {
+                            const currentYear = new Date().getFullYear();
+                            return `${currentYear}-${month}-${day}`;
+                        }
+                    }
+                    if (/^\d+(\.\d+)?$/.test(trimmed)) {
+                        const date = new Date(Math.round((parseFloat(trimmed) - 25569) * 86400 * 1000));
+                        if (!isNaN(date)) {
+                            const y = date.getFullYear();
+                            const m = String(date.getMonth() + 1).padStart(2, '0');
+                            const d = String(date.getDate()).padStart(2, '0');
+                            return `${y}-${m}-${d}`;
+                        }
+                    }
+                    const ddmmyyyy = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+                    if (ddmmyyyy) {
+                        const d = ddmmyyyy[1].padStart(2, '0');
+                        const m = ddmmyyyy[2].padStart(2, '0');
+                        const y = ddmmyyyy[3];
+                        return `${y}-${m}-${d}`;
+                    }
+                    const parsed = new Date(trimmed);
+                    if (!isNaN(parsed)) {
+                        const y = parsed.getFullYear();
+                        const m = String(parsed.getMonth() + 1).padStart(2, '0');
+                        const d = String(parsed.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    }
+                    return trimmed;
                 }
+                return String(val).trim();
+            };
 
-                const doc = await Booking.findOneAndUpdate(
-                    { bookingId: trimmedId },
-                    newValues,
-                    { upsert: true, new: true }
-                );
-
-                if (!isNew) {
-                    await new BookingActivityLog({
-                        bookingId: doc.bookingId,
-                        updatedBy: "System File Parser",
-                        action: "Updated via Excel Re-uploaded booking",
-                        changesMade: changesMade
-                    }).save();
+            const parseExcelTime = (val) => {
+                if (val === undefined || val === null || val === '') return "00:00";
+                if (val instanceof Date && !isNaN(val)) {
+                    const timeStr = val.toLocaleTimeString('en-US', { hour12: false });
+                    const parts = timeStr.split(':');
+                    return `${parts[0]}:${parts[1]}`;
                 }
+                let num = typeof val === 'number' ? val : parseFloat(val);
+                if (!isNaN(num) && typeof val !== 'string' || (typeof val === 'string' && /^0?\.\d+$/.test(val.trim()))) {
+                    const totalSeconds = Math.round(num * 24 * 60 * 60);
+                    const hours = Math.floor(totalSeconds / 3600) % 24;
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const h = String(hours).padStart(2, '0');
+                    const m = String(minutes).padStart(2, '0');
+                    return `${h}:${m}`;
+                }
+                if (typeof val === 'string') {
+                    const trimmed = val.trim();
+                    if (/am|pm/i.test(trimmed)) {
+                        const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)$/i);
+                        if (match) {
+                            let hours = parseInt(match[1], 10);
+                            const minutes = match[2];
+                            const ampm = match[4].toLowerCase();
+                            if (ampm === 'pm' && hours < 12) hours += 12;
+                            if (ampm === 'am' && hours === 12) hours = 0;
+                            return `${String(hours).padStart(2, '0')}:${minutes}`;
+                        }
+                    }
+                    return trimmed;
+                }
+                return "00:00";
+            };
 
-                count++;
+            const zones = await Zone.find({});
+            const getZoneForDistance = (km) => {
+                if (km <= 0) return "—";
+                const match = zones.find(z => km >= z.minKm && km <= z.maxKm);
+                return match ? match.name : "—";
+            };
+
+            const rates = await Rate.find({});
+            const ratesMap = {};
+            rates.forEach(r => {
+                ratesMap[r.zoneName.trim()] = r;
+            });
+        
+
+            const workbook = xlsx.read(file.buffer, { type: 'buffer', cellDates: false, raw: false });
+            const rawRows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+            // Normalize all column headers: lowercase + remove spaces for robust matching
+            const normalizedRows = rawRows.map(row => {
+                const cleanRow = {};
+                for (const key in row) {
+                    const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
+                    cleanRow[normalizedKey] = row[key];
+                }
+                return cleanRow;
+            });
+
+            // Map of normalized column header -> Booking schema field name
+            // Add new column aliases here as needed without touching parsing logic
+            const COLUMN_MAP = {
+                'bookingid':        'bookingId',
+                'pickupdate':       'pickUpDate',
+                'pickuptime':       'pickUpTime',
+                'pickupaddress':    'pickupAddress',
+                'dropaddress':      'dropAddress',
+                'cartype':          'carType',
+                'distance(km)':     'distanceKm',
+                'distancekm':       'distanceKm',
+                'noofluggages':     'noOfLuggages',
+                'noofpassengers':   'noOfPassengers',
+                'noofluggage':      'noOfLuggages',
+                'noofpassenger':    'noOfPassengers',
+                'noofinfant':       'noOfInfants',
+                'noofinfants':      'noOfInfants',
+                'noofbaby':         'noOfBaby',
+                'flightnumber':     'flightNumber',
+                'customername':     'customerName',
+                'customermobile':   'customerMobile',
+                'number':           'customerMobile',
+                'customernumber':   'customerMobile',
+                'pickupregion':     'pickUpRegion',
+                'pickupcountry':    'pickUpCountry',
+                'pickupzipcode':    'pickUpZipcode',
+                'dropregion':       'dropRegion',
+                'dropcountry':      'dropCountry',
+                'dropzipcode':      'dropZipcode',
+                'vendorname':       'vendorName',
+                'carnumber':        'carNumber',
+                'status':           'status',
+                'remarks':          'remarks',
+                'chauffeurname':    'chauffeurName',
+                'chauffeur':        'chauffeurName',
+                'chauffeurphone':   'chauffeurPhone',
+                'chauffeurnumber':  'chauffeurPhone',
+            };
+
+            let count = 0;
+            const warnings = [];
+            for (const row of normalizedRows) {
+                // Use normalized 'bookingid' key for lookup
+                const bId = row['bookingid'];
+                if (bId) {
+                    const pickupAddress = row['pickupaddress'] ? String(row['pickupaddress']).trim() : "—";
+                    const dropAddress   = row['dropaddress']   ? String(row['dropaddress']).trim()   : "—";
+                    const distanceKm    = parseFloat(row['distance(km)'] ?? row['distancekm']) || 0;
+                    const trimmedId     = String(bId).trim();
+
+                    if (distanceKm === 0) {
+                        warnings.push(`Booking ${trimmedId} has a distance of 0 KM.`);
+                    }
+                    if (
+                        pickupAddress.toLowerCase().includes('abu dhabi') ||
+                        dropAddress.toLowerCase().includes('abu dhabi')
+                    ) {
+                        warnings.push(`Booking ${trimmedId} contains no Abu Dhabi in the address.`);
+                    }
+
+                    const existingDoc = await Booking.findOne({ bookingId: trimmedId });
+                    const isNew = !existingDoc;
+
+                    // Computed fields (derived, not taken directly from columns)
+                    const serviceType = getServiceType(pickupAddress, dropAddress);
+                    const zone        = getZoneForDistance(distanceKm);
+
+                    let amountAED = 0;
+                    const rate = ratesMap[zone];
+                    if (rate) {
+                        if (serviceType === 'Pickup') amountAED = rate.pickupAmount;
+                        else if (serviceType === 'Drop') amountAED = rate.dropAmount;
+                    }
+
+                    const capitalizedModel = model ? capitalizeWords(model.trim()) : '—';
+
+                    // --- Dynamic attribute extraction ---
+                    // Start with fixed/computed values that override any column data
+                    const newValues = {
+                        bookingId:     trimmedId,
+                        clientName:    clientName,
+                        model:         capitalizedModel,
+                        serviceType:   serviceType,
+                        zone:          zone,
+                        amountAED:     amountAED,
+                        bookingSource: "Portal",
+                        // Specially handled columns (need type conversion or formatting)
+                        pickUpDate:    parseExcelDate(row['pickupdate']),
+                        pickUpTime:    parseExcelTime(row['pickuptime']),
+                        distanceKm:    distanceKm,
+                        pickupAddress: pickupAddress,
+                        dropAddress:   dropAddress,
+                    };
+
+                    // Fields that need integer parsing
+                    const intFields = new Set(['noOfLuggages', 'noOfPassengers', 'noOfInfants', 'noOfBaby']);
+
+                    // Dynamically map all remaining columns in the file to schema fields
+                    for (const [normalizedHeader, schemaField] of Object.entries(COLUMN_MAP)) {
+                        // Skip fields already set above (computed or specially handled)
+                        if (newValues[schemaField] !== undefined) continue;
+                        if (!(normalizedHeader in row)) continue;
+
+                        const rawVal = row[normalizedHeader];
+                        if (intFields.has(schemaField)) {
+                            newValues[schemaField] = parseInt(rawVal) || 0;
+                        } else {
+                            newValues[schemaField] = rawVal !== undefined && rawVal !== null
+                                ? String(rawVal).trim() || "—"
+                                : "—";
+                        }
+                    }
+
+                    let changesMade = {};
+                    if (!isNew) {
+                        for (const key of Object.keys(newValues)) {
+                            const oldVal = existingDoc[key];
+                            const newVal = newValues[key];
+                            const oldStr = oldVal === undefined || oldVal === null ? "" : String(oldVal);
+                            const newStr = newVal === undefined || newVal === null ? "" : String(newVal);
+                            if (oldStr !== newStr) {
+                                changesMade[key] = { old: oldVal ?? "—", new: newVal };
+                            }
+                        }
+                    }
+
+                    const doc = await Booking.findOneAndUpdate(
+                        { bookingId: trimmedId },
+                        newValues,
+                        { upsert: true, new: true }
+                    );
+
+                    if (!isNew) {
+                        await new BookingActivityLog({
+                            bookingId: doc.bookingId,
+                            updatedBy: "System File Parser",
+                            action: "Updated via Excel Re-uploaded booking",
+                            changesMade: changesMade
+                        }).save();
+                    }
+
+                    count++;
+                }
             }
+            totalCount += count;
         }
-        res.json({ success: true, message: `Successfully parsed and recorded ${count} entries for client "${clientName}".`, warnings: warnings });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Spreadsheet structure processing aborted." });
+        res.json({ success: true, message: `Processed ${totalCount} bookings from ${req.files.length} file(s).`, warnings: allWarnings });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "File parsing crashed." });
     }
 });
 
 // Appending Vendor Manifest Changes Route
-router.post('/api/bookings/upload-vendor', requireAuth, upload.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "Payload sheet missing." });
+router.post('/api/bookings/upload-vendor', requireAuth, upload.array('files'), async (req, res) => {
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: "Payload sheet missing." });
     try {
-        const originalName = req.file.originalname;
-        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
-        const fileNameMatch = nameWithoutExt.match(/^(.+?)_confirm_(\d{1,2}-\d{1,2}|\d{1,2}[A-Za-z]{3})$/i);
-        const vendorName = fileNameMatch ? fileNameMatch[1].trim() : "Unknown";
+        let totalCount = 0;
+        const allWarnings = [];
 
-        const parseDriverDetails = (trimmed) => {
-            if (!trimmed) return null;
-            const match = trimmed.match(/^([^+\d]+)/);
-            if (match) {
-                const textVariable = match[0].trim().replace(/\s+/g, ' ');
-                const remaining = trimmed.replace(match[0], "");
-                const cleanPhoneVariable = remaining.trim().replace(/\s+/g, '');
-                return { name: textVariable, phone: cleanPhoneVariable };
-            }
-            return null;
-        };
+        for (const file of req.files) {
+            const originalName = file.originalname;
+            const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+            const fileNameMatch = nameWithoutExt.match(/^(.+?)_confirm_(\d{1,2}-\d{1,2}|\d{1,2}[A-Za-z]{3})$/i);
+            const vendorName = fileNameMatch ? fileNameMatch[1].trim() : "Unknown";
 
-        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const rawRows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const parseDriverDetails = (trimmed) => {
+                if (!trimmed) return null;
+                const match = trimmed.match(/^([^+\d]+)/);
+                if (match) {
+                    const textVariable = match[0].trim().replace(/\s+/g, ' ');
+                    const remaining = trimmed.replace(match[0], "");
+                    const cleanPhoneVariable = remaining.trim().replace(/\s+/g, '');
+                    return { name: textVariable, phone: cleanPhoneVariable };
+                }
+                return null;
+            };
 
-        const normalizedRows = rawRows.map(row => {
-            const cleanRow = {};
-            for (const key in row) {
-                const cleanKey = key.trim().replace(/\s+/g, ' ');
-                cleanRow[cleanKey] = row[key];
-            }
-            return cleanRow;
-        });
+            const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+            const rawRows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
-        let count = 0;
-        for (const row of normalizedRows) {
-            const bId = row["Ref. No"];
-            if (bId) {
-                const currentDoc = await Booking.findOne({ bookingId: String(bId).trim() });
-                if (currentDoc) {
-                    let changed = false;
-                    let chauffeurAudit = '';
+            const normalizedRows = rawRows.map(row => {
+                const cleanRow = {};
+                for (const key in row) {
+                    const cleanKey = key.trim().replace(/\s+/g, ' ');
+                    cleanRow[cleanKey] = row[key];
+                }
+                return cleanRow;
+            });
 
-                    const driverDetailsRaw = row["Driver's Details"];
-                    const incomingPlate = row["Plate Number"];
-                    const { name: incomingChauffeur, phone: incomingPhone } = parseDriverDetails(driverDetailsRaw.trim());
+            let count = 0;
+            for (const row of normalizedRows) {
+                const bId = row["Ref. No"];
+                if (bId) {
+                    const currentDoc = await Booking.findOne({ bookingId: String(bId).trim() });
+                    if (currentDoc) {
+                        let changed = false;
+                        let chauffeurAudit = '';
 
-                    const capitalizedIncomingChauffeur = incomingChauffeur ? capitalizeWords(incomingChauffeur.trim()) : '';
-                    if (capitalizedIncomingChauffeur && currentDoc.chauffeurName !== capitalizedIncomingChauffeur) {
-                        const oldName = currentDoc.chauffeurName ? currentDoc.chauffeurName : '—';
-                        currentDoc.chauffeurName = capitalizedIncomingChauffeur;
+                        const driverDetailsRaw = row["Driver's Details"];
+                        const incomingPlate = row["Plate Number"];
+                        const { name: incomingChauffeur, phone: incomingPhone } = parseDriverDetails(driverDetailsRaw.trim());
 
-                        changed = true;
-                        const timestamp = new Date().toLocaleString('en-GB');
-                        chauffeurAudit = `[${timestamp}] '${oldName}' to '${incomingChauffeur}'`;
-                    }
-                    if (incomingPhone && currentDoc.chauffeurPhone !== incomingPhone) {
-                        currentDoc.chauffeurPhone = incomingPhone;
-                        changed = true;
-                    }
-                    if (incomingPlate && currentDoc.carNumber !== String(incomingPlate).trim()) {
-                        currentDoc.carNumber = String(incomingPlate).trim();
-                        changed = true;
-                    }
-                    if (currentDoc.vendorName !== vendorName) {
-                        currentDoc.vendorName = vendorName;
-                        changed = true;
-                    }
+                        const capitalizedIncomingChauffeur = incomingChauffeur ? capitalizeWords(incomingChauffeur.trim()) : '';
+                        if (capitalizedIncomingChauffeur && currentDoc.chauffeurName !== capitalizedIncomingChauffeur) {
+                            const oldName = currentDoc.chauffeurName ? currentDoc.chauffeurName : '—';
+                            currentDoc.chauffeurName = capitalizedIncomingChauffeur;
 
-                    if (changed) {
-                        let newAuditLines = "Chauffeur assigned by vendor upload";
-                        if (chauffeurAudit) {
-                            newAuditLines += `\n${chauffeurAudit}`;
+                            changed = true;
+                            const timestamp = new Date().toLocaleString('en-GB');
+                            chauffeurAudit = `[${timestamp}] '${oldName}' to '${incomingChauffeur}'`;
                         }
-                        await currentDoc.save();
+                        if (incomingPhone && currentDoc.chauffeurPhone !== incomingPhone) {
+                            currentDoc.chauffeurPhone = incomingPhone;
+                            changed = true;
+                        }
+                        if (incomingPlate && currentDoc.carNumber !== String(incomingPlate).trim()) {
+                            currentDoc.carNumber = String(incomingPlate).trim();
+                            changed = true;
+                        }
+                        if (currentDoc.vendorName !== vendorName) {
+                            currentDoc.vendorName = vendorName;
+                            changed = true;
+                        }
 
-                        await new BookingActivityLog({
-                            bookingId: currentDoc.bookingId,
-                            updatedBy: 'System',
-                            action: 'Chauffeur assigned',
-                            description: newAuditLines
-                        }).save();
+                        if (changed) {
+                            let newAuditLines = "Chauffeur assigned by vendor upload";
+                            if (chauffeurAudit) {
+                                newAuditLines += `\n${chauffeurAudit}`;
+                            }
+                            await currentDoc.save();
 
-                        count++;
+                            await new BookingActivityLog({
+                                bookingId: currentDoc.bookingId,
+                                updatedBy: 'System',
+                                action: 'Chauffeur assigned',
+                                description: newAuditLines
+                            }).save();
+
+                            count++;
+                        }
                     }
                 }
             }
+            totalCount += count;
         }
-        res.json({ success: true, message: `Successfully tracked and updated fields inside ${count} records.` });
+        res.json({ success: true, message: `Successfully tracked and updated fields inside ${totalCount} records.`, warnings: allWarnings });
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: "Failed to map spreadsheet rows changes." });
